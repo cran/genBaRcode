@@ -9,7 +9,12 @@
 
 genBaRcode_app <- function(dat_dir = system.file("extdata", package = "genBaRcode")) {
 
-  options("genBaRcode-shinyDir" = paste0(dat_dir, .Platform$file.sep))
+  tmp <- unlist(strsplit(dat_dir, split = ""))
+  if(tmp[length(tmp)] != .Platform$file.sep) {
+    dat_dir <- paste0(dat_dir, .Platform$file.sep)
+  }
+
+  options("genBaRcode-shinyDir" = dat_dir)
   options("genBaRcode-info" = "")
 
   appDir <- system.file("shiny_app", package = "genBaRcode")
@@ -17,9 +22,88 @@ genBaRcode_app <- function(dat_dir = system.file("extdata", package = "genBaRcod
     stop("Could not find example directory. Try re-installing the `genBaRcode` package.", call. = FALSE)
   }
 
-  shiny::runApp(appDir, display.mode = "normal")
+  shiny::runApp(appDir, display.mode = "normal", quiet = TRUE)
 
 }
+
+#' Predefined Barcode Backbone Sequences
+#'
+#' allows one to choose between predefined backbone sequences. Excecution of the function without any parameter value will display all
+#' available backbone sequences. The id parameter will accept the name of the backbone or the rownumber of the shown selection.
+#'
+#' @param id an integer or character value in order to choose a specific backbone.
+#'
+#' @return a character string.
+#' @export
+
+getBackbone <- function(id = NULL) {
+
+  BB_names <- c("BC32-GFP",
+                "BC32-Venus",
+                "BC32-eBFP",
+                "BC32-T-Sapphire",
+                "BC16-GFP",
+                "BC16-Venus",
+                "BC16-mCherry",
+                "BC16-Cerulean")
+  BB_seqs <- c("ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN",
+               "CGANNAGANNCTTNNCGANNCTANNGGANNCTTNNCGANNAGANNCTTNNCGANNCTANNGGANNCTTNNCGANNAGANN",
+               "CTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNCTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNCTANNCAGNN",
+               "CAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNCAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNCAGNNATCNN",
+               "ATCNNTAGNNTCCNNAAGNNTCGNNAAGNNTCGNNAGTNNTAG",
+               "CTANNCTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNGAT",
+               "CTANNCAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNGAT",
+               "CTANNCACNNAGANNCTTNNCGANNCTANNGGANNCTTNNGAT")
+
+  if(is.null(id)) {
+    return(print(format(data.frame(name = BB_names, sequences = BB_seqs), justify = "left", width = 20), right = FALSE))
+  } else {
+    if(is.numeric(id)) {
+      BB_seqs[id]
+    } else {
+      if(is.character(id))
+        if(sum(BB_names == id) == 0) {
+            message("# No backbone with such name known.")
+            return()
+        } else {
+          return(BB_seqs[BB_names == id])
+        }
+    }
+  }
+}
+
+#' @importFrom foreach %dopar%
+makeParallel <- function(dat, func, cpus, split = FALSE, ...) {
+
+  if(split) {
+    psize <- floor(length(dat) / cpus)
+    dat <- lapply(1:cpus, function(x) {
+      if(x == 1) {
+        dat[1:psize]
+      } else {
+        if(x == cpus) {
+          dat[((psize*(x-1))+1):length(dat)]
+        } else {
+          dat[((psize*(x-1))+1):(psize*x)]
+        }
+      }
+    })
+  }
+
+  cl <- parallel::makeCluster(cpus)
+  doParallel::registerDoParallel(cl)
+
+  # due to dopar problems
+  i <- NULL
+  tmp <- foreach::foreach(i = 1:length(dat)) %dopar% {
+    func(dat[[i]], ...)
+  }
+
+  parallel::stopCluster(cl)
+
+  return(tmp)
+}
+
 
 #' @title Data Type Conversion
 #'
@@ -32,11 +116,16 @@ genBaRcode_app <- function(dat_dir = system.file("extdata", package = "genBaRcod
 #'
 #' @return a BCdat object.
 #' @export
+#' @importFrom methods new
 
-as.BCdat <- function(dat, label = "without_label", mask = "", resDir = getwd()) {
+asBCdat <- function(dat, label = "without_label", mask = "", resDir = getwd()) {
 
-  if(dim(dat) != 2) {
-    stop("# Data obect needs two columns!")
+  if(dim(dat)[2] < 2 | dim(dat)[2] > 3) {
+    stop("# Data obect needs two or three columns!")
+  }
+
+  if(dim(dat)[2] == 2) {
+    dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(dat[, 1]), barcode = as.character(dat[, 2]))
   }
 
   return(methods::new(Class = "BCdat", reads = dat, results_dir = resDir,
@@ -79,6 +168,7 @@ as.BCdat <- function(dat, label = "without_label", mask = "", resDir = getwd()) 
 #'
 #' @return a BCdat object.
 #' @export
+#' @importFrom methods new
 
 readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
 
@@ -125,12 +215,12 @@ readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
 #'
 #' @description Extracts barcode positions.
 #'
-#' @param bc_pattern a character vector.
+#' @param bc_backbone a character vector.
 
-.getWobblePos <- function(bc_pattern = "") {
+.getWobblePos <- function(bc_backbone = "") {
 
-  bc_pattern <- unlist(strsplit(bc_pattern, ""))
-  wobble_pos <- which(bc_pattern == "N")
+  bc_backbone <- unlist(strsplit(bc_backbone, ""))
+  wobble_pos <- which(bc_backbone == "N")
 
   return(wobble_pos)
 }
@@ -156,14 +246,14 @@ readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
 #'
 #' @description Identifies the barcode positions within the mask and generates a awk command.
 #'
-#' @param wooble_pos a character string.
+#' @param wobble_pos a character string.
 
-.getBarcodeFilter <- function(wooble_pos) {
+.getBarcodeFilter <- function(wobble_pos) {
 
   seq_length <- NULL
   counter <- 1
-  for(i in 1:(length(wooble_pos)-1)) {
-    if(wooble_pos[i+1]-wooble_pos[i] == 1) {
+  for(i in 1:(length(wobble_pos)-1)) {
+    if(wobble_pos[i+1]-wobble_pos[i] == 1) {
               counter <- counter +1
     } else {
               seq_length <- c(seq_length, counter)
@@ -173,11 +263,11 @@ readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
   seq_length <- c(seq_length, counter)
 
   awk_cmd <- "| awk '{print "
-  wooble_pos_tmp <- wooble_pos
+  wobble_pos_tmp <- wobble_pos
   for(i in 1:length(seq_length)) {
-    awk_cmd <- paste(awk_cmd, "substr($0, ", wooble_pos_tmp[1], ", ", seq_length[i], ")", sep="")
+    awk_cmd <- paste(awk_cmd, "substr($0, ", wobble_pos_tmp[1], ", ", seq_length[i], ")", sep="")
     if(i < length(seq_length)) {
-        wooble_pos_tmp <- wooble_pos_tmp[-(1:seq_length[i])]
+        wobble_pos_tmp <- wobble_pos_tmp[-(1:seq_length[i])]
     }
   }
   BC_filter <- paste(awk_cmd, "}'", sep="")
@@ -189,22 +279,22 @@ readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
 #'
 #' @description Creates a search file for a command line grep search.
 #'
-#' @param bc_pattern a character string (barcode pattern).
+#' @param bc_backbone a character string (barcode pattern).
 #' @param patterns_file a character string (file name)
 
-.createPatternFile <- function(bc_pattern, patterns_file) {
+.createPatternFile <- function(bc_backbone, patterns_file) {
 
-  bc_pattern <- unlist(strsplit(bc_pattern, ""))
+  bc_backbone <- unlist(strsplit(bc_backbone, ""))
   nucs <- c("A", "T", "C" ,"G")
   counter <- 2
   results <- list()
-  results[[1]] <- bc_pattern
+  results[[1]] <- bc_backbone
 
-  for(i in 1:length(bc_pattern)) {
-    if(bc_pattern[i] != ".") {
-      tmp <- nucs[-which(nucs == bc_pattern[i])]
+  for(i in 1:length(bc_backbone)) {
+    if(bc_backbone[i] != ".") {
+      tmp <- nucs[-which(nucs == bc_backbone[i])]
       for(k in 1:3) {
-        results[[counter]] <- bc_pattern
+        results[[counter]] <- bc_backbone
         results[[counter]][i] <- tmp[k]
         counter <- counter + 1
       }
@@ -213,15 +303,18 @@ readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
   utils::write.table(lapply(results, function(x) { paste(x, collapse = "") }), patterns_file, quote = FALSE, sep = "\n", row.names = FALSE, col.names = FALSE)
 }
 
-#' @title Hamming distance calculation
-#' @description Calculates the minimum hamming distance to a set of predefined barcodes for a given list of barcode.
+#' @title Distance calculation
+#' @description Calculates the minimum distance to a set of predefined barcodes for a given list of barcode.
 #' @param BC_dat a BCdat object
 #' @param ori_BCs a character vector containing barcodes to which the minimal hamming distance will be calculated.
+#' @param m a character string, Method for distance calculation, default value is Hamming distance. Possible values
+#' are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function
+#' of the stringdist-package for more information).
 
-.getMinHammDist <- function(BC_dat, ori_BCs) {
+.getMinDist <- function(BC_dat, ori_BCs, m = "hamming") {
 
   HD_values <- unlist(lapply(methods::slot(BC_dat, "reads")$"barcode", function(x) {
-        min(stringdist::stringdist(ori_BCs, x, "h"))
+        min(stringdist::stringdist(ori_BCs, x, m))
   }))
 
   return(HD_values)
@@ -231,21 +324,28 @@ readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
 #'
 #' @description Generates a collection of colors for a list of barcodes based on their identified minimum hamming distances.
 #'
-#' @param minHD a numeric vector of all the minimum hamming distances
-#' @param type a character string. Possible Values are "rainbow", "heat.colors", "topo.colors" (see package "grDevices")
+#' @param minHD a numeric vector of all the minimum hamming distances.
+#' @param type a character string. Possible Values are "rainbow", "heat.colors", "topo.colors" (see package "grDevices").
+#' @param alpha a numeric value between 0 and 1, modifies colour transparency.
 
-.generateColors <- function(minHD, type = "rainbow") {
+.generateColors <- function(minHD, type = "rainbow", alpha = 1) {
 
   BC_dist <- sort(unique(minHD))
 
   if(type == "rainbow") {
-    color_list <- grDevices::rainbow(length(unique(minHD)))
+    color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(11, "Spectral"), alpha = alpha)(length(unique(minHD)))
   }
   if(type == "heat") {
-    color_list <- grDevices::heat.colors(length(unique(minHD)))
+    color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "YlOrRd"), alpha = alpha)(length(unique(minHD)))
   }
   if(type == "topo.colors") {
-    color_list <- grDevices::topo.colors(length(unique(minHD)))
+    color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(11, "BrBG"), alpha = alpha)(length(unique(minHD)))
+  }
+  if(type == "greens") {
+    color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(11, "Greens"), alpha = alpha)(length(unique(minHD)))
+  }
+  if(type == "wild") {
+    color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"), alpha = alpha)(length(unique(minHD)))
   }
 
   dist_col <- unlist(lapply(minHD, function(x) {

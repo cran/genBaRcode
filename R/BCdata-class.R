@@ -1,4 +1,6 @@
 
+# one could include important parameters such as number of mismatches, indels, min_score etc.
+# and also save them within the csv file
 
 #' @title checkBarcodeData
 #'
@@ -73,7 +75,6 @@ BCdat <- methods::setClass("BCdat", slots = list(
                                    ), validity = checkBarcodeData
                           )
 
-
 methods::setGeneric (
   name = "reads",
   def = function(object) {
@@ -88,7 +89,6 @@ methods::setMethod (
     return(object@reads)
   }
 )
-
 
 methods::setGeneric (
   name = "reads<-",

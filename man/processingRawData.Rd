@@ -5,11 +5,12 @@
 \title{Data processing}
 \usage{
 processingRawData(file_name, source_dir, results_dir, mismatch = 0,
-  label = "", bc_pattern, quality_filtering = FALSE, min_score = 30,
-  min_reads = 2, unix = FALSE, save_it = TRUE, cpus = 1)
+  indels = FALSE, label = "", bc_backbone, bc_backbone_label = "",
+  min_score = 30, min_reads = 2, save_it = TRUE, seqLogo = FALSE,
+  cpus = 1, full_output = FALSE)
 }
 \arguments{
-\item{file_name}{a character string which will serve as file name.}
+\item{file_name}{a character string or a character vector, containing the file name(s).}
 
 \item{source_dir}{a character string which contains the path to the source files.}
 
@@ -17,22 +18,26 @@ processingRawData(file_name, source_dir, results_dir, mismatch = 0,
 
 \item{mismatch}{an positive integer value, default is 0, if greater values are provided they indicate the number of allowed mismtaches when identifying the barcode constructes.}
 
+\item{indels}{a logical value. If TRUE the chosen number of mismatches will be interpreted as edit distance and allow for insertions and deletions as well.}
+
 \item{label}{a character string which serves as a label for every kind of created output file.}
 
-\item{bc_pattern}{a character string describing the barcode design, variable positions have to be marked with the letter 'N'.}
+\item{bc_backbone}{a character string describing the barcode design, variable positions have to be marked with the letter 'N'.}
 
-\item{quality_filtering}{a logical value. If TRUE a quality filtering will be applied before extracting the barcode sequences}
+\item{bc_backbone_label}{a character vector, an optional list of barcode backbone names serving as additional identifier within file names and BCdat labels. If not provided ordinary numbers will serve as alternative.}
 
-\item{min_score}{a positive integer value, only relevant if quality_filtering is TRUE, all fastq sequence with an average score smaller
-then min_score will be excluded}
+\item{min_score}{a positive integer value, all fastq sequence with an average score smaller
+then min_score will be excluded, if min_score = 0 there will be no quality score filtering}
 
 \item{min_reads}{positive integer value, all extracted barcode sequences with a read count smaller than min_reads will be excluded from the results}
 
-\item{unix}{under construction}
-
 \item{save_it}{a logical value. If TRUE, the raw data will be saved as a csv-file.}
 
-\item{cpus}{a positive integer identifying the number of usable CPUs.}
+\item{seqLogo}{a logical value. If TRUE, the sequence logo of the entire NGS file will be generated and saved.}
+
+\item{cpus}{an integer value, indicating the number of available cpus.}
+
+\item{full_output}{a logical value. If TRUE, additional output files will be generated.}
 }
 \value{
 a BCdat object which includes reads, seqs, directories, masks.
@@ -45,13 +50,13 @@ a Phred-Score based quality filtering will be conducted and the results will be 
 
 \dontrun{
 
-bc_pattern <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
+bc_backbone <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
 
 source_dir <- system.file("extdata", package = "genBaRcode")
 
 processingRawData(file_name = "test_data.fastq", source_dir, results_dir = getwd(), mismatch = 0,
-label = "test", bc_pattern, quality_filtering = FALSE, min_score = 30,
-min_reads = 2, unix = FALSE, save_it = TRUE)
+label = "test", bc_backbone, min_score = 30, indels = FALSE,
+min_reads = 2, save_it = TRUE, seqLogo = FALSE)
 
 }
 }

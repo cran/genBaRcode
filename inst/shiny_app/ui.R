@@ -1,13 +1,16 @@
 
 
 shinyUI(
+
   pageWithSidebar(
 
-    headerPanel("genBaRcode Package"),
+    headerPanel("genBaRcode App"),
 
     # SideBar
     sidebarPanel(
-      uiOutput("selection")
+      uiOutput("selection"),
+      uiOutput("parameters"),
+      uiOutput("end")
     ),
 
     # MainPanel

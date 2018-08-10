@@ -3,19 +3,21 @@
 #'
 #' @description Reads the corresponding fast(q) file(s), extracts the defined barcode constructs and counts them. Optionally,
 #' a Phred-Score based quality filtering will be conducted and the results will be saved within a csv file.
-#' @param file_name a character string which will serve as file name.
+#' @param file_name a character string or a character vector, containing the file name(s).
 #' @param source_dir a character string which contains the path to the source files.
 #' @param results_dir a character string which contains the path to the results directory.
 #' @param mismatch an positive integer value, default is 0, if greater values are provided they indicate the number of allowed mismtaches when identifying the barcode constructes.
+#' @param indels a logical value. If TRUE the chosen number of mismatches will be interpreted as edit distance and allow for insertions and deletions as well.
 #' @param label a character string which serves as a label for every kind of created output file.
-#' @param bc_pattern a character string describing the barcode design, variable positions have to be marked with the letter 'N'.
-#' @param quality_filtering a logical value. If TRUE a quality filtering will be applied before extracting the barcode sequences
-#' @param min_score a positive integer value, only relevant if quality_filtering is TRUE, all fastq sequence with an average score smaller
-#'  then min_score will be excluded
+#' @param bc_backbone a character string describing the barcode design, variable positions have to be marked with the letter 'N'.
+#' @param bc_backbone_label a character vector, an optional list of barcode backbone names serving as additional identifier within file names and BCdat labels. If not provided ordinary numbers will serve as alternative.
+#' @param min_score a positive integer value, all fastq sequence with an average score smaller
+#'  then min_score will be excluded, if min_score = 0 there will be no quality score filtering
 #' @param min_reads positive integer value, all extracted barcode sequences with a read count smaller than min_reads will be excluded from the results
-#' @param unix under construction
 #' @param save_it a logical value. If TRUE, the raw data will be saved as a csv-file.
-#' @param cpus a positive integer identifying the number of usable CPUs.
+#' @param seqLogo a logical value. If TRUE, the sequence logo of the entire NGS file will be generated and saved.
+#' @param cpus an integer value, indicating the number of available cpus.
+#' @param full_output a logical value. If TRUE, additional output files will be generated.
 #'
 #' @return a BCdat object which includes reads, seqs, directories, masks.
 #' @export
@@ -24,82 +26,174 @@
 #'
 #' \dontrun{
 #'
-#' bc_pattern <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
+#' bc_backbone <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
 #'
 #' source_dir <- system.file("extdata", package = "genBaRcode")
 #'
 #' processingRawData(file_name = "test_data.fastq", source_dir, results_dir = getwd(), mismatch = 0,
-#' label = "test", bc_pattern, quality_filtering = FALSE, min_score = 30,
-#' min_reads = 2, unix = FALSE, save_it = TRUE)
+#' label = "test", bc_backbone, min_score = 30, indels = FALSE,
+#' min_reads = 2, save_it = TRUE, seqLogo = FALSE)
 #'
 #' }
 
-processingRawData <- function(file_name, source_dir, results_dir, mismatch = 0, label = "", bc_pattern, quality_filtering = FALSE, min_score = 30, min_reads = 2, unix = FALSE, save_it = TRUE, cpus = 1) {
+processingRawData <- function(file_name, source_dir, results_dir, mismatch = 0, indels = FALSE, label = "", bc_backbone, bc_backbone_label = "", min_score = 30, min_reads = 2, save_it = TRUE, seqLogo = FALSE, cpus = 1, full_output = FALSE) {
 
-  if(.Platform$OS.type != "unix" & unix) {
-    warning("# no unix based system recognized, set parameter 'unix' to FALSE")
-    unix <- FALSE
-  }
+  # if(.Platform$OS.type != "unix" & unix) {
+  #   warning("# no unix based system recognized, set parameter 'unix' to FALSE")
+  #   unix <- FALSE
+  # }
 
   source_dir <- .testDirIdentifier(source_dir)
   results_dir <- .testDirIdentifier(results_dir)
 
-  if(label == "") {
-    label <- strsplit(file_name, split = "[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][1]
+  if(length(bc_backbone_label) != length(bc_backbone)) {
+    warning(paste(length(bc_backbone), "BC patterns but", length(bc_backbone_label),"BC pattern labels"))
+    bc_backbone_label = 1:length(bc_backbone)
   }
 
-  ending <- strsplit(file_name, split="[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][2]
-  if(quality_filtering) {
-    if(ending == "fastq" | ending == "FASTQ" | ending == "fq") {
-      dat <- qualityFiltering(file_name, source_dir, min_score)
+ if(length(file_name) > 1) {
+   dat <- processingRawData_multiple(file_name, source_dir, results_dir, mismatch, indels, label, bc_backbone, bc_backbone_label, min_score, min_reads, save_it, seqLogo, cpus, full_output)
+ } else {
+   if(length(file_name) == 1) {
+      dat <- processingRawData_single(file_name, source_dir, results_dir, mismatch, indels, label, bc_backbone, bc_backbone_label, min_score, min_reads, save_it, seqLogo, full_output, cpus)
     } else {
-      warning("NGS quality filtering only available for FASTQ file formats! Proceeding without filtering!", call. = FALSE, immediate. = TRUE)
+      stop("# file_name needs to be a character string (processingRawData)")
     }
-  } else {
-    if(ending == "fasta") {
-      dat <- ShortRead::readFasta(dirPath = source_dir, pattern = file_name)
-    } else {
-      dat <- ShortRead::readFastq(dirPath = source_dir, pattern = file_name)
-    }
-  }
-
-  if(unix) {
-      stop("under construction...")
-      # extractSeqs_unix(file_name, label, results_dir, source_dir, mismatch, bc_pattern)
-      # dat <- utils::read.table(paste(results_dir, label, "_matching_seqs.tmp", sep=""))
-      # dat <- dat[dat[, 1] > min_reads, ]
-      # dat <- data.frame(pos = 1:dim(dat)[1], read_count = dat[order(dat[, 1], decreasing = TRUE), 1], barcode = dat[order(dat[, 1], decreasing = TRUE), 2])
-  } else {
-      dat <- extractBarcodes(dat, label, results_dir, mismatch = mismatch, indels = FALSE, bc_pattern, cpus)
-      if(length(dat) != 0) {
-        dat <- dat[order(dat, decreasing = TRUE)]
-        dat <- dat[dat > min_reads]
-        if(length(dat) != 0) {
-          dat <- data.frame(pos = 1:length(dat), read_count = as.numeric(dat), barcode = names(dat))
-        }
-      }
-  }
-
-  if(save_it) {
-    if(sum(dim(dat)) > 2) {
-      utils::write.table(dat[, 2:3], paste(results_dir, label, "_BCs.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
-    } else {
-      utils::write.table(dat, paste(results_dir, label, "_BCs.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
-    }
-  }
-
-  if(!is.null(dim(dat))) {
-    dat <- methods::new(Class = "BCdat", reads = dat, results_dir = results_dir,
-                        label = label,
-                        mask = bc_pattern)
-  } else {
-    warning(paste("# ", label, ": No barcode sequences saved!", sep = ""))
-    dat <- methods::new(Class = "BCdat", reads = as.data.frame(NULL), results_dir = results_dir,
-                        label = label,
-                        mask = bc_pattern)
-  }
+ }
 
   return(dat)
+}
+
+processingRawData_single <- function(file_name, source_dir, results_dir, mismatch = 0, indels = FALSE, label = "", bc_backbone, bc_backbone_label = 1:length(bc_backbone), min_score = 30, min_reads = 2, save_it = TRUE, seqLogo = FALSE, full_output, cpus) {
+
+    if(label == "") {
+        label <- strsplit(file_name, split = "[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][1]
+      }
+
+      ending <- strsplit(file_name, split="[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][2]
+      if(min_score > 0) {
+        if(ending == "fastq" | ending == "FASTQ" | ending == "fq") {
+          dat <- qualityFiltering(file_name, source_dir, min_score)
+          if(length(dat) == 0) {
+            warning("There are no sequences after quality filtering!")
+          }
+        } else {
+          warning("NGS quality filtering only available for FASTQ file formats! Proceeding without filtering!", call. = FALSE, immediate. = TRUE)
+        }
+      } else {
+        if(ending == "fasta") {
+          dat <- ShortRead::readFasta(dirPath = source_dir, pattern = file_name)
+        } else {
+          dat <- ShortRead::readFastq(dirPath = source_dir, pattern = file_name)
+        }
+      }
+
+      if(seqLogo) {
+        l<- nchar(as.character(ShortRead::sread(dat)[1]))
+        ggplot2::ggsave(filename = paste("seqLogo_", label, "_NGS.png", sep = ""),
+                        plot = suppressMessages(plotSeqLogo(as.character(ShortRead::sread(dat))) + ggplot2::scale_x_continuous(breaks = c(1, round(l/2), l))),
+                        device = "png",
+                        path = results_dir,
+                        width = l / 2,
+                        height = l / 16)
+      }
+
+      dat <- extractBarcodes(dat, label, results_dir, mismatch = mismatch, indels = indels, bc_backbone, full_output, cpus)
+
+      if(length(bc_backbone) == 1) {
+        dat <- prepareDatObject(dat, results_dir, label, bc_backbone, min_reads, save_it)
+      } else {
+        for(b in 1:length(bc_backbone)) {
+          dat[[b]] <- prepareDatObject(dat[[b]], results_dir, label = paste(label, bc_backbone_label[b], sep = "_"), bc_backbone[b], min_reads, save_it)
+        }
+      }
+
+      return(dat)
+}
+
+#' @importFrom foreach %dopar%
+
+processingRawData_multiple <- function(file_name, source_dir, results_dir, mismatch = 0, indels = FALSE, label = "", bc_backbone, bc_backbone_label = 1:length(bc_backbone), min_score = 30, min_reads = 2, save_it = TRUE, seqLogo = FALSE, cpus = 1, full_output) {
+
+      if(cpus < 1) {
+        warning("# cpus needs to be >= 1")
+        cpus <- 1
+      }
+
+      if(cpus > parallel::detectCores()) {
+        warning(paste("# available number of CPUs is", parallel::detectCores()))
+        cpus <- parallel::detectCores() - 1
+      }
+
+      if(length(label) != length(file_name)) {
+        if(label != "") {
+          message(paste0("# there are ", length(file_name), " files but ", length(label), "labels"))
+        }
+
+        label <- unlist(lapply(strsplit(file_name, split = "[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE), function(x) { x[1] }))
+      }
+
+      if(cpus > length(file_name)) {
+        cpus <- length(file_name)
+      }
+
+      cl <- parallel::makeCluster(cpus)
+      doParallel::registerDoParallel(cl)
+
+      # due to dopar problems
+      i <- NULL
+      tmp <- foreach::foreach(i = 1:length(file_name)) %dopar% {
+        processingRawData_single(file_name[i], source_dir, results_dir, mismatch, indels, label[i], bc_backbone, bc_backbone_label, min_score, min_reads, save_it, seqLogo, full_output, cpus)
+      }
+
+      parallel::stopCluster(cl)
+      return(tmp)
+}
+
+
+
+#' Data Object Preparation
+#'
+#' generates BCdat object after barcode backbone identification.
+#'
+#' @param dat a tbl_df object (e.g. created by dplyr::count)
+#' @param results_dir a character string which contains the path to the results directory.
+#' @param label a character string which serves as a label for every kind of created output file.
+#' @param bc_backbone a character string describing the barcode design, variable positions have to be marked with the letter 'N'.
+#' @param min_reads positive integer value, all extracted barcode sequences with a read count smaller than min_reads will be excluded from the results
+#' @param save_it a logical value. If TRUE, the raw data will be saved as a csv-file.
+#'
+#' @return a BCdat object.
+#' @importFrom methods new
+#'
+prepareDatObject <- function(dat, results_dir, label, bc_backbone, min_reads, save_it) {
+
+  if(dim(dat)[1] == 0) {
+      return(methods::new(Class = "BCdat", reads = data.frame(), results_dir = results_dir,
+                   label = label,
+                   mask = bc_backbone))
+  }
+
+  dat <- dat[dat[, 2] > min_reads, ]
+  if(dim(dat)[1] != 0) {
+    dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(dat$n), barcode = as.character(unlist(dat[, 1])))
+    if(save_it) {
+      if(sum(dim(dat)) > 2) {
+        utils::write.table(dat[, 2:3], paste(results_dir, label, "_BCs.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
+      } else {
+        utils::write.table(dat, paste(results_dir, label, "_BCs.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
+      }
+    }
+
+    return(methods::new(Class = "BCdat", reads = dat, results_dir = results_dir,
+                            label = label,
+                            mask = bc_backbone))
+  } else {
+    warning(paste("only barocdes with less than", min_reads, "reads detected for backbone:", bc_backbone))
+    return(methods::new(Class = "BCdat", reads = data.frame(), results_dir = results_dir,
+                          label = label,
+                          mask = bc_backbone))
+  }
 }
 
 #' @title Barcode extraction
@@ -111,26 +205,27 @@ processingRawData <- function(file_name, source_dir, results_dir, mismatch = 0, 
 #' @param results_dir a character string which contains the path to the results directory.
 #' @param mismatch an positive integer value, default is 0, if greater values are provided they indicate the number of allowed mismatches when identifing the barcode constructe.
 #' @param indels under construction.
-#' @param bc_pattern a character string describing the barcode design, variable positions have to be marked with the letter 'N'.
-#' @param cpus a positive integer identifying the number of usable CPUs.
+#' @param bc_backbone a character string or character vector describing the barcode design, variable positions have to be marked with the letter 'N'.
+#' @param cpus an integer value, indicating the number of available cpus.
+#' @param full_output a logical value. If TRUE additional output files will be generated in order to identify errors.
 #'
-#' @return a frequency table of barcode sequences.
+#' @return one or a list of frequency table(s) of barcode sequences.
 #' @export
 #'
 #' @examples
 #'
 #' \dontrun{
 #'
-#' bc_pattern <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
+#' bc_backbone <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
 #' source_dir <- system.file("extdata", package = "genBaRcode")
 #' dat <- ShortRead::readFastq(dirPath = source_dir, pattern = "test_data.fastq")
 #'
 #' extractBarcodes(dat, label = "test", results_dir = getwd(), mismatch = 0,
-#' indels = FALSE, bc_pattern)
+#' indels = FALSE, bc_backbone)
 #'
 #' }
 
-extractBarcodes <- function(dat, label, results_dir, mismatch = 0, indels = FALSE, bc_pattern, cpus = 1) {
+extractBarcodes <- function(dat, label, results_dir = "./", mismatch = 0, indels = FALSE, bc_backbone, full_output = FALSE, cpus = 1) {
 
   if(mismatch < 0) {
     warning("# mismatch needs to be an integer >= 0")
@@ -142,44 +237,209 @@ extractBarcodes <- function(dat, label, results_dir, mismatch = 0, indels = FALS
     cpus <- 1
   }
 
-  if(cpus > getOption("mc.cores", 2L)) {
-    warning(paste("# available number of CPUs is", getOption("mc.cores", 2L)))
-    cpus <- getOption("mc.cores", 2L)
+   if(length(bc_backbone) > 1) {
+      extractBarcodes_multiple(dat, label, results_dir, mismatch, indels, bc_backbone, full_output)
+    } else {
+     extractBarcodes_single(dat, label, results_dir, mismatch, indels, bc_backbone, full_output, cpus)
+    }
+}
+
+#' @title Barcode extraction for a single backbone
+#'
+#' @description Extracts barcodes according to the given barcode design from a fastq file.
+#'
+#' @param dat a ShortReadQ object.
+#' @param label a character string.
+#' @param results_dir a character string which contains the path to the results directory.
+#' @param mismatch an positive integer value, default is 0, if greater values are provided they indicate the number of allowed mismatches when identifing the barcode constructe.
+#' @param indels under construction.
+#' @param bc_backbone a character string or character vector describing the barcode design, variable positions have to be marked with the letter 'N'.
+#' @param cpus an integer value, indicating the number of available cpus.
+#' @param full_output a logical value. If TRUE additional output files will be generated in order to identify errors.
+#'
+#' @return one frequency table of barcode sequences.
+#'
+#' @importFrom foreach %dopar%
+
+extractBarcodes_single <- function(dat, label, results_dir, mismatch = 0, indels = FALSE, bc_backbone, full_output = FALSE, cpus = 1) {
+
+  read_length <- ShortRead::width(dat)[1]
+  mm <- 0
+
+  match_index <- Biostrings::vmatchPattern(bc_backbone, ShortRead::sread(dat),
+                             max.mismatch = mm, min.mismatch = mm,
+                             with.indels = indels, fixed = FALSE,
+                             algorithm = "auto")
+  match_matrix <- data.frame(match_index)
+
+  while(mm < mismatch & length(unique(match_matrix$group)) < length(ShortRead::sread(dat))) {
+    mm <- mm + 1
+    match_index <- Biostrings::vmatchPattern(bc_backbone, ShortRead::sread(dat),
+                                             max.mismatch = mm, min.mismatch = mm,
+                                             with.indels = indels, fixed = FALSE,
+                                             algorithm = "auto")
+    match_matrix <- rbind(match_matrix, data.frame(match_index))
   }
 
-  if(indels) {
+  if(sum(duplicated(match_matrix$group)) != 0) {
+    warning("Duplicated backbone matches")
+    if(full_output) {
+      group <- unique(match_matrix$group[duplicated(match_matrix$group)])
+      utils::write.table(match_matrix[match_matrix$group %in% group, ], paste(results_dir, label, "_", bc_backbone, "_duplicatedMatcher.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
+    }
+    match_matrix <- match_matrix[!duplicated(match_matrix$group), ]
+  }
 
-    match_index <- unlist(lapply(ShortRead::sread(dat), function(x) {
-                                Biostrings::matchPattern(bc_pattern, x,
-                                      max.mismatch = mismatch, min.mismatch = 0,
-                                      with.indels = TRUE, fixed = FALSE,
-                                      algorithm = "auto")
-                    }))
+  if(cpus > 1) {
+    cl <- parallel::makeCluster(cpus)
+    doParallel::registerDoParallel(cl)
+
+    # due to dopar problems
+    s <- NULL
+    parts <- seq(1, dim(match_matrix)[1], floor(dim(match_matrix)[1] / cpus))
+    tmp <- foreach::foreach(s = 1:(length(parts) - 1)) %dopar% {
+      apply(match_matrix[ifelse(s == 1, parts[s], parts[s] + 1):parts[s+1], ], 1, function(x) {
+        x <- as.numeric(x)
+        substring(as.character(ShortRead::sread(dat)[x[1]]), x[3], x[4])
+      })
+    }
+    parallel::stopCluster(cl)
+    dat <- unlist(tmp)
   } else {
-
-    wobble_pos <- .getWobblePos(bc_pattern)
-    match_index <- Biostrings::vmatchPattern(bc_pattern, ShortRead::sread(dat),
-                            max.mismatch = mismatch, min.mismatch = 0,
-                            with.indels = FALSE, fixed = FALSE,
-                            algorithm = "auto")
+    dat <- apply(match_matrix, 1, function(x) {
+      x <- as.numeric(x)
+      substring(as.character(ShortRead::sread(dat)[x[1]]), x[3], x[4])
+    })
   }
 
-  dat <- ShortRead::sread(dat)[match_index]
-  if(sum(ShortRead::width(dat) != 0) != 0) {
-      dat <- dat[ShortRead::width(dat) != 0]
+  if(!indels & length(table(nchar(dat))) > 1) {
 
-      if(indels) {
-              return(table(as.character(dat)))
+    if(full_output) {
+      utils::write.table(dat, paste(results_dir, label, "_", bc_backbone, "_diffLengthBCs.csv", sep=""), sep=";", row.names = FALSE, col.names = FALSE, quote = FALSE)
+    }
+
+    for(m in 1:mismatch) {
+      if(sum(match_matrix$start == (1-m)) > 0) {
+        dat[match_matrix$start == (1-m)] <- paste0(paste(rep("N", m), collapse = ""), dat[match_matrix$start == (1-m)])
       } else {
-              return(table(unlist(parallel::mclapply(as.character(dat), function(x, wobble_pos) {
-                paste(unlist(strsplit(x, split= ""))[wobble_pos], collapse = "")
-              }, wobble_pos, mc.cores = cpus))))
+        if(sum(match_matrix$end == read_length+m) > 0) {
+          dat[match_matrix$start == read_length] <- paste0(dat[match_matrix$start == 0], paste(rep("N", m), collapse = ""))
+        } else {
+          warning("different barcode lengths")
+        }
       }
+    }
+  }
+
+  if(length(dat) != 0) {
+    if(!indels) {
+      wobble_pos <- .getWobblePos(bc_backbone)
+      dat <- data.frame(unlist(lapply(dat, function(x, wobble_pos) {
+        paste(unlist(strsplit(x, split= ""))[wobble_pos], collapse = "")
+      }, wobble_pos)))
+    } else {
+      dat <- as.data.frame(dat)
+    }
+    return(dplyr::count(dat, dat[, 1], sort = TRUE))
   } else {
       warning(paste("# ", label, ": no backbone patterns detectable!", sep =""))
-      return(NULL)
+      return(data.frame())
   }
 
+}
+
+#' @title Barcode extraction for multiple backbones
+#'
+#' @description Extracts barcodes according to the given barcode design from a fastq file.
+#'
+#' @param dat a ShortReadQ object.
+#' @param label a character string.
+#' @param results_dir a character string which contains the path to the results directory.
+#' @param mismatch an positive integer value, default is 0, if greater values are provided they indicate the number of allowed mismatches when identifing the barcode constructe.
+#' @param indels under construction.
+#' @param bc_backbone a character string or character vector describing the barcode design, variable positions have to be marked with the letter 'N'.
+#' @param full_output a logical value. If TRUE additional output files will be generated in order to identify errors.
+#'
+#' @return a list of frequency table(s) of barcode sequences.
+
+extractBarcodes_multiple <- function(dat, label, results_dir, mismatch = 0, indels = FALSE, bc_backbone, full_output) {
+
+  dat_list <- list()
+  read_length <- ShortRead::width(dat)[1]
+
+  for(i in 1:length(bc_backbone)) {
+
+    mm <- 0
+
+    match_index <- Biostrings::vmatchPattern(bc_backbone[i], ShortRead::sread(dat),
+                                                 max.mismatch = mm, min.mismatch = mm,
+                                                 with.indels = indels, fixed = FALSE,
+                                                 algorithm = "auto")
+    match_matrix <- data.frame(match_index)
+
+    while(mm < mismatch & length(unique(match_matrix$group)) < length(ShortRead::sread(dat))) {
+      mm <- mm + 1
+      match_index <- Biostrings::vmatchPattern(bc_backbone[i], ShortRead::sread(dat),
+                                               max.mismatch = mm, min.mismatch = mm,
+                                               with.indels = indels, fixed = FALSE,
+                                               algorithm = "auto")
+      match_matrix <- rbind(match_matrix, data.frame(match_index))
+    }
+
+    if(sum(duplicated(match_matrix$group)) != 0) {
+      warning("Duplicated backbone matches")
+      if(full_output) {
+        group <- unique(match_matrix$group[duplicated(match_matrix$group)])
+        utils::write.table(match_matrix[match_matrix$group %in% group, ], paste(results_dir, label, "_", bc_backbone, "_duplicatedMatcher.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
+      }
+      match_matrix <- match_matrix[!duplicated(match_matrix$group), ]
+    }
+
+    dat_list[[i]] <- apply(match_matrix, 1, function(x) {
+      x <- as.numeric(x)
+      substring(as.character(ShortRead::sread(dat)[x[1]]), x[3], x[4])
+    })
+
+    if(!indels & length(table(nchar(dat_list[[i]]))) > 1) {
+
+      if(full_output) {
+        utils::write.table(dat_list[[i]], paste(results_dir, label, "_", bc_backbone[i], "_diffLengthBCs.csv", sep=""), sep=";", row.names = FALSE, col.names = FALSE, quote = FALSE)
+      }
+     for(m in 1:mismatch) {
+        if(sum(match_matrix$start == (1-m)) > 0) {
+          dat_list[[i]][match_matrix$start == (1-m)] <- paste0(paste(rep("N", m), collapse = ""), dat_list[[i]][match_matrix$start == (1-m)])
+        } else {
+          if(sum(match_matrix$end == read_length+m) > 0) {
+            dat_list[[i]][match_matrix$start == read_length] <- paste0(dat_list[[i]][match_matrix$start == 0], paste(rep("N", m), collapse = ""))
+          } else {
+            warning("different barcode lengths")
+          }
+        }
+     }
+    }
+
+    if(length(dat_list[[i]]) != 0) {
+        if(!indels) {
+          wobble_pos <- .getWobblePos(bc_backbone[i])
+          dat_list[[i]] <- data.frame(unlist(lapply(dat_list[[i]], function(x, wobble_pos) {
+            paste(unlist(strsplit(x, split= ""))[wobble_pos], collapse = "")
+          }, wobble_pos)))
+        } else {
+          dat_list[[i]] <- as.data.frame(dat_list[[i]])
+        }
+        dat_list[[i]] <- dplyr::count(dat_list[[i]], dat_list[[i]][, 1], sort = TRUE)
+        dat <- dat[-match_matrix$group]
+    } else {
+      dat_list[[i]] <- data.frame()
+    }
+  }
+
+  if(sum(unlist(lapply(dat_list, nrow))) > 0) {
+    return(dat_list)
+  } else {
+    warning(paste("# ", label, ": no backbone patterns detectable!", sep =""))
+    return(data.frame())
+  }
 }
 
 
@@ -263,8 +523,11 @@ hybridsIdentification <- function(dat, min_seq_length = 2) {
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{
 #' source_dir <- system.file("extdata", package = "genBaRcode")
 #' qualityFiltering(file_name = "test_data.fastq", source_dir, results_dir = getwd(), min_score = 30)
+#' }
 
 qualityFiltering <- function(file_name, source_dir, results_dir, min_score = 30) {
 

@@ -4,8 +4,8 @@
 \alias{plotTimeSeries}
 \title{Plotting Time Series Data}
 \usage{
-plotTimeSeries(ov_dat, colr = NULL, tp = NULL, bar_width = 0.05,
-  labs = NULL, x_label = "time", y_label = "contribution")
+plotTimeSeries(ov_dat, colr = NULL, tp = NULL, x_label = "time",
+  y_label = "contribution")
 }
 \arguments{
 \item{ov_dat}{a numeric matrix consisting of all time points as columns and all barcode sequences as rows and the corresponding read counts as numerical values (see function \code{generateTimeSeriesData()}).}
@@ -13,10 +13,6 @@ plotTimeSeries(ov_dat, colr = NULL, tp = NULL, bar_width = 0.05,
 \item{colr}{a vector of character strings identifying a certain color palette.}
 
 \item{tp}{a numeric vector containing the time points of measurement (in case of unequally distributed time points).}
-
-\item{bar_width}{a numeric value specifying the visual space between two plotted measurements.}
-
-\item{labs}{a character vector containing sample labels.}
 
 \item{x_label}{a character string providing the x-axis label.}
 
