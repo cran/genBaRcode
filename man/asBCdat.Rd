@@ -4,14 +4,15 @@
 \alias{asBCdat}
 \title{Data Type Conversion}
 \usage{
-asBCdat(dat, label = "without_label", mask = "", resDir = getwd())
+asBCdat(dat, label = "without_label", BC_backbone = "",
+  resDir = getwd())
 }
 \arguments{
 \item{dat}{a data.frame object with two columns containing read counts and barcode sequences.}
 
 \item{label}{a optional character string used as label.}
 
-\item{mask}{a optional character string, describing the barcode backbone structure.}
+\item{BC_backbone}{a optional character string, describing the barcode backbone structure.}
 
 \item{resDir}{a optional character string, identifying the path to the results directory, default is current working directory.}
 }

@@ -5,9 +5,10 @@
 \title{Data processing}
 \usage{
 processingRawData(file_name, source_dir, results_dir, mismatch = 0,
-  indels = FALSE, label = "", bc_backbone, bc_backbone_label = "",
+  indels = FALSE, label = "", bc_backbone, bc_backbone_label = NULL,
   min_score = 30, min_reads = 2, save_it = TRUE, seqLogo = FALSE,
-  cpus = 1, full_output = FALSE)
+  cpus = 1, strategy = "sequential", full_output = FALSE,
+  bc_extraction = TRUE, dist_method = "hamming")
 }
 \arguments{
 \item{file_name}{a character string or a character vector, containing the file name(s).}
@@ -18,7 +19,7 @@ processingRawData(file_name, source_dir, results_dir, mismatch = 0,
 
 \item{mismatch}{an positive integer value, default is 0, if greater values are provided they indicate the number of allowed mismtaches when identifying the barcode constructes.}
 
-\item{indels}{a logical value. If TRUE the chosen number of mismatches will be interpreted as edit distance and allow for insertions and deletions as well.}
+\item{indels}{a logical value. If TRUE the chosen number of mismatches will be interpreted as edit distance and allow for insertions and deletions as well (currently under construction).}
 
 \item{label}{a character string which serves as a label for every kind of created output file.}
 
@@ -37,13 +38,21 @@ then min_score will be excluded, if min_score = 0 there will be no quality score
 
 \item{cpus}{an integer value, indicating the number of available cpus.}
 
+\item{strategy}{since the future package is used for parallelisation a strategy has to be stated, the default is "sequential"  (cpus = 1) and "multisession" (cpus > 1). For further information please read future::plan() R-Documentation.}
+
 \item{full_output}{a logical value. If TRUE, additional output files will be generated.}
+
+\item{bc_extraction}{a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.}
+
+\item{dist_method}{a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
+Available distance methods are Optimal string aligment ("osa"), Levenshtein ("lv"), Damerau-Levenshtein ("dl"), Hamming ("hamming"), Longest common substring ("lcs"), q-gram ("qgram"), cosine ("cosine"), Jaccard ("jaccard"), Jaro-Winkler ("jw"),
+distance based on soundex encoding ("soundex"). For more detailed information see stringdist function of the stringdist-package for more information)}
 }
 \value{
-a BCdat object which includes reads, seqs, directories, masks.
+a BCdat object which includes reads, seqs, directories, BC_backbones.
 }
 \description{
-Reads the corresponding fast(q) file(s), extracts the defined barcode constructs and counts them. Optionally,
+Reads the corresponding fast(a/q) file(s), extracts the defined barcode constructs and counts them. Optionally,
 a Phred-Score based quality filtering will be conducted and the results will be saved within a csv file.
 }
 \examples{

@@ -20,6 +20,6 @@ S4 data class containing every relevant information.
 
 \item{\code{label}}{character string identifying the particular experiment (will be part of the names of any file created).}
 
-\item{\code{mask}}{character string of the used barcode design.}
+\item{\code{BC_backbone}}{character string of the used barcode design (also called barcode backbone).}
 }}
 

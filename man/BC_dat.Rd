@@ -9,14 +9,14 @@
   \item{class}{sequence overview}
   \item{barcode read counts}{a data frame consisting of read counts and barcode sequences}
   \item{results dir}{path to a directory for any kind of results}
-  \item{barcode layout}{a string clarifying the barcode backbone structure}
+  \item{barcode backbone}{a string clarifying the barcode backbone structure}
   \item{label}{character string, used as label for file names etc.}
 }}
 \usage{
 BC_dat
 }
 \description{
-A dataset containing an example BCdat object which consists of 301 barcode sequences.
+A dataset containing an example BCdat object which consists of 301 barcode sequences and with no error correction yet.
 }
 \details{
 BC_dat:

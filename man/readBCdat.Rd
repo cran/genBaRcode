@@ -4,7 +4,8 @@
 \alias{readBCdat}
 \title{Data Input}
 \usage{
-readBCdat(path = "./", label = "", mask = "", file_name, s = ";")
+readBCdat(path = "./", label = "", BC_backbone = "", file_name,
+  s = ";")
 }
 \arguments{
 \item{path}{a character string containing the path to a saved read count table (two columns containing read counts and barcode
@@ -12,7 +13,7 @@ sequences).}
 
 \item{label}{a character string containing a label of the data set.}
 
-\item{mask}{a character string containing the barcode structure information.}
+\item{BC_backbone}{a character string containing the barcode structure information.}
 
 \item{file_name}{a character string containing the name of the file to read in.}
 
@@ -22,5 +23,5 @@ sequences).}
 a BCdat object.
 }
 \description{
-Reads in a data table and returns a BCdat objects.
+Reads a data table (csv-file) and returns a BCdat objects.
 }

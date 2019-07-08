@@ -20,7 +20,7 @@ generateTimeSeriesData <- function(BC_dat_list) {
       BCs <- unique(c(BCs, as.character(methods::slot(BC_dat_list[[i]], "reads")$"barcode")))
   }
 
-  dat <- matrix(0, ncol = length(BC_dat_list), nrow = length(BCs), dimnames = list(BCs, NULL))
+  dat <- matrix(0, ncol = length(BC_dat_list), nrow = length(BCs), dimnames = list(BCs, unlist(lapply(BC_dat_list, function(x) { methods::slot(x, "label") }))))
 
   for(i in 1:length(BC_dat_list)) {
       index <- match(BCs, as.character(methods::slot(BC_dat_list[[i]], "reads")$"barcode"))

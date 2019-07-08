@@ -21,7 +21,3 @@ ggplot2 object
 \description{
 Generates a barplot visualising the abundances of unique read count frequencies.
 }
-\examples{
-data(BC_dat)
-plotReadFrequencies <- function(BC_dat, b = 10, show_it = TRUE)
-}

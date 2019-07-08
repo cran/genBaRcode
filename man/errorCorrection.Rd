@@ -4,7 +4,9 @@
 \alias{errorCorrection}
 \title{Error Correction}
 \usage{
-errorCorrection(BC_dat, maxDist, save_it = FALSE, cpus = 1, m = "hamming")
+errorCorrection(BC_dat, maxDist, save_it = FALSE, cpus = 1,
+  strategy = "sequential", m = "hamming", type = "standard",
+  only_EC_BCs = TRUE, EC_analysis = FALSE, start_small = TRUE)
 }
 \arguments{
 \item{BC_dat}{one or a list of BCdat objects, containing the necessary sequences.}
@@ -17,15 +19,22 @@ cluster two sequences together.}
 \item{cpus}{an integer value, in case multiple BCdat objects are provided a CPU number greater than one
 would allow for a parallelized calculation (one CPU per BCdat object).}
 
+\item{strategy}{since the future package is used for parallelisation a strategy has to be stated, the default is "sequential"  (cpus = 1) and "multiprocess" (cpus > 1). It is not necessary to chose a certain strategy, since it will be adjusted accordingly to the number of cpus which were choosen. For further information please read future::plan() R-Documentation.}
+
 \item{m}{a character string, Method for distance calculation, default value is Hamming distance. Possible values
 are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function
 of the stringdist-package for more information)}
+
+\item{type}{there are different error correction strategies avalable ("standard", "connectivity based", "graph based", "clustering").}
+
+\item{only_EC_BCs}{a logical value. If TRUE only informations about barcodes which are still present after error correction will be saved. Only meaningful if EC_analysis is set to TRUE.}
+
+\item{EC_analysis}{a logical value. If TRUE additional error correction details will be returned, which can also be visualised with the respective "error correction" plots.}
+
+\item{start_small}{a logical value. If TRUE, the error correcton type "standard" will cluster always the smallest highly similar BC with the BC of interest. IF FALSE, the error correcton type "standard" will adapt its cluster strategy and cluster always BC of interest with the most frequent highly similar BC.}
 }
 \description{
 Corrects a list of equally long (barcode) sequences. Based on calculated hamming distances
 as a measure of similarity, highly similar sequences are clustered together and the cluster label will
 be the respective sequence with the highest read count.
-}
-\examples{
-errorCorrection(BC_dat, maxDist = 8, save_it = FALSE, m = "hamming")
 }

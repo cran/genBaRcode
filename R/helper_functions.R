@@ -1,4 +1,26 @@
 
+.compare_pair <- function(BC_dat1 = NULL, BC_dat2 = NULL) {
+
+  if(is.null(BC_dat1) & is.null(BC_dat2)) {
+    stop("Two BCdat-objects required!")
+  }
+
+  dat1 <- methods::slot(BC_dat1, "reads")
+  dat2 <- methods::slot(BC_dat2, "reads")
+
+  ind1 <- match(dat1$barcode, dat2$barcode)
+
+  BCs <- list()
+  BCs$shared <- cbind(dat1[!is.na(ind1), 2:3], dat2[ind1[!is.na(ind1)], 2:3])
+  BCs$shared <- cbind(BCs$shared, BCs$shared[, 1] - BCs$shared[, 3])
+  BCs$unique_sample1 <- dat1[is.na(ind1), 2:3]
+  names(BCs$shared)[5] <- "reads_diff"
+  BCs$unique_sample2 <- dat2[(1:dim(dat2)[1])[-ind1[!is.na(ind1)]], 2:3]
+
+  return(BCs)
+}
+
+
 #' @title Shiny App
 #' @description Launches the corresponding shiny app.
 #'
@@ -24,6 +46,17 @@ genBaRcode_app <- function(dat_dir = system.file("extdata", package = "genBaRcod
 
   shiny::runApp(appDir, display.mode = "normal", quiet = TRUE)
 
+}
+
+get_help_txt <- function(fct = NULL) {
+
+  rdbfile <- file.path(find.package("genBaRcode"), "help", "genBaRcode")
+  rdb <- utils::getFromNamespace("fetchRdDB", "tools")(rdbfile, key = fct)
+
+  txt <- utils::capture.output(tools::Rd2HTML(rdb))
+
+  #paste(txt[c(-1:-5, -(length(txt)))], collapse = " ")
+  return(c("", "", txt))
 }
 
 #' Predefined Barcode Backbone Sequences
@@ -72,37 +105,37 @@ getBackbone <- function(id = NULL) {
   }
 }
 
-#' @importFrom foreach %dopar%
-makeParallel <- function(dat, func, cpus, split = FALSE, ...) {
-
-  if(split) {
-    psize <- floor(length(dat) / cpus)
-    dat <- lapply(1:cpus, function(x) {
-      if(x == 1) {
-        dat[1:psize]
-      } else {
-        if(x == cpus) {
-          dat[((psize*(x-1))+1):length(dat)]
-        } else {
-          dat[((psize*(x-1))+1):(psize*x)]
-        }
-      }
-    })
-  }
-
-  cl <- parallel::makeCluster(cpus)
-  doParallel::registerDoParallel(cl)
-
-  # due to dopar problems
-  i <- NULL
-  tmp <- foreach::foreach(i = 1:length(dat)) %dopar% {
-    func(dat[[i]], ...)
-  }
-
-  parallel::stopCluster(cl)
-
-  return(tmp)
-}
+# @importFrom foreach %dopar%
+# makeParallel <- function(dat, func, cpus, split = FALSE, ...) {
+#
+#   if(split) {
+#     psize <- floor(length(dat) / cpus)
+#     dat <- lapply(1:cpus, function(x) {
+#       if(x == 1) {
+#         dat[1:psize]
+#       } else {
+#         if(x == cpus) {
+#           dat[((psize*(x-1))+1):length(dat)]
+#         } else {
+#           dat[((psize*(x-1))+1):(psize*x)]
+#         }
+#       }
+#     })
+#   }
+#
+#   cl <- parallel::makeCluster(cpus)
+#   doParallel::registerDoParallel(cl)
+#
+#   # due to dopar problems
+#   i <- NULL
+#   tmp <- foreach::foreach(i = 1:length(dat)) %dopar% {
+#     func(dat[[i]], ...)
+#   }
+#
+#   parallel::stopCluster(cl)
+#
+#   return(tmp)
+# }
 
 
 #' @title Data Type Conversion
@@ -111,33 +144,39 @@ makeParallel <- function(dat, func, cpus, split = FALSE, ...) {
 #'
 #' @param dat a data.frame object with two columns containing read counts and barcode sequences.
 #' @param label a optional character string used as label.
-#' @param mask a optional character string, describing the barcode backbone structure.
+#' @param BC_backbone a optional character string, describing the barcode backbone structure.
 #' @param resDir a optional character string, identifying the path to the results directory, default is current working directory.
 #'
 #' @return a BCdat object.
 #' @export
 #' @importFrom methods new
 
-asBCdat <- function(dat, label = "without_label", mask = "", resDir = getwd()) {
+asBCdat <- function(dat, label = "without_label", BC_backbone = "", resDir = getwd()) {
 
   if(dim(dat)[2] < 2 | dim(dat)[2] > 3) {
     stop("# Data obect needs two or three columns!")
   }
 
   if(dim(dat)[2] == 2) {
-    dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(dat[, 1]), barcode = as.character(dat[, 2]))
+    index <- order(as.numeric(dat[, 1]), decreasing = TRUE)
+    dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(dat[index, 1]), barcode = as.character(dat[index, 2]))
+  }
+
+  if(dim(dat)[2] == 3) {
+    index <- order(as.numeric(dat[, 2]), decreasing = TRUE)
+    dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(dat[index, 2]), barcode = as.character(dat[index, 3]))
   }
 
   return(methods::new(Class = "BCdat", reads = dat, results_dir = resDir,
                       label = label,
-                      mask = mask))
+                      BC_backbone = BC_backbone))
 }
 
 #' Converts hex colors into gephi usable rgb colors
 #'
 #' @param colrs a character vector containing a list of hex colors
 #'
-#' @return
+#' @return a color vector.
 #'
 
 .hex2rgbColor <- function(colrs) {
@@ -157,12 +196,12 @@ asBCdat <- function(dat, label = "without_label", mask = "", resDir = getwd()) {
 
 #' @title Data Input
 #'
-#' @description Reads in a data table and returns a BCdat objects.
+#' @description Reads a data table (csv-file) and returns a BCdat objects.
 #'
 #' @param path a character string containing the path to a saved read count table (two columns containing read counts and barcode
 #' sequences).
 #' @param label a character string containing a label of the data set.
-#' @param mask a character string containing the barcode structure information.
+#' @param BC_backbone a character string containing the barcode structure information.
 #' @param file_name a character string containing the name of the file to read in.
 #' @param s a character value, identifying the column separating char.
 #'
@@ -170,7 +209,9 @@ asBCdat <- function(dat, label = "without_label", mask = "", resDir = getwd()) {
 #' @export
 #' @importFrom methods new
 
-readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
+readBCdat <- function(path = "./", label = "", BC_backbone = "", file_name, s = ";") {
+
+  path <- .testDirIdentifier(path)
 
   dat <- utils::read.table(paste(path, file_name, sep = ""), header = TRUE, sep = s)
   dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(dat$read_count), barcode = as.character(dat$barcode))
@@ -184,7 +225,7 @@ readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
 
   return(methods::new(Class = "BCdat", reads = dat, results_dir = path,
                label = label,
-               mask = mask))
+               BC_backbone = BC_backbone))
 
 }
 
@@ -244,7 +285,7 @@ readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
 
 #' @title Internal function
 #'
-#' @description Identifies the barcode positions within the mask and generates a awk command.
+#' @description Identifies the barcode positions within the barcode backbone and generates a awk command.
 #'
 #' @param wobble_pos a character string.
 
@@ -316,6 +357,17 @@ readBCdat <- function(path = "./", label = "", mask = "", file_name, s = ";") {
   HD_values <- unlist(lapply(methods::slot(BC_dat, "reads")$"barcode", function(x) {
         min(stringdist::stringdist(ori_BCs, x, m))
   }))
+
+  return(HD_values)
+}
+
+.getMinDist_one_sample <- function(BC_dat, m = "hamming") {
+
+  dat <- methods::slot(BC_dat, "reads")$"barcode"
+
+  HD_values <- unlist(lapply(1:(length(dat)-1), function(i, dat, m) {
+    min(stringdist::stringdist(dat[i], dat[(i+1):length(dat)], m))
+  }, dat, m))
 
   return(HD_values)
 }

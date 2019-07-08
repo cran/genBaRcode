@@ -17,7 +17,3 @@ a ggplot2 object
 \description{
 Plots a sequence logo
 }
-\examples{
-data(BC_dat)
-plotSeqLogo(BC_dat)
-}

@@ -1,4 +1,123 @@
 
+#' Clustered HD Plot
+#'
+#' This function will create a jitter plot displaying the maximal distances within each of the barcode sequence clusters.
+#'
+#' @param datEC a BC_dat object, returned by the error_correction function with the EC_analysis parameter set to TRUE.
+#' @param size a numeric value, specifying the dot size.
+#'
+#' @return a ggplot2 object.
+#' @export
+#'
+# @examples
+# data(BC_dat)
+# BC_dat_EC <- errorCorrection(BC_dat, maxDist = 8, EC_analysis = TRUE)
+# error_correction_clustered_HDs(BC_dat_EC, size = 0.75)
+
+error_correction_clustered_HDs <- function(datEC, size = 0.75) {
+
+  tmp <- reshape2::melt(
+    lapply(datEC$EC_seqs, function(x) {
+      if(length(x) > 1) {
+          max(as.matrix(stringdist::stringdistmatrix(x, method = "hamming")))
+      } else {
+        NA
+      }
+    }))
+
+  tmp <- tmp[!is.na(tmp$value), ]
+
+  no <- sum(unlist(lapply(datEC$EC_seqs, function(x) {
+    if(length(x) > 1) {
+      1
+    }
+  })))
+
+  if(no == 0) {
+    warning("# There were no sequences clustered during error correction.")
+    p <- NULL
+  } else {
+
+    p <- ggplot2::ggplot(tmp, ggplot2::aes_string(x = factor("EC-BCs"), y = "value")) +
+          ggplot2::geom_jitter(width = 0.2, height = 0.2, size = size) +
+          ggplot2::ylab("max. HDs") +
+          ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+          ggplot2::xlab(paste0("clustered BC distances (", no," clusters)")) +
+          ggplot2::scale_y_continuous(limits = c(0, max(tmp$value, na.rm = TRUE) + 1))
+  }
+
+  return(p)
+}
+
+#' Circle Plot
+#'
+#' creates a circle plot based on the additional data gathered by the error_correction function (EC_analysis needs to be set to TRUE). This function is intended to visualize the error correction procedure.
+#'
+#' @param edges a data frame containing edge definitions by two columns calles "from" and "to". Such data frame will be returned by the error_correction function with the EC_analysis parameter set to TRUE.
+#' @param vertices a data frame with at least one column containing a list of nodes (also returned by the error_correction function with the EC_analysis parameter set to TRUE)
+#'
+#' @return a ggplot2 object.
+#' @export
+#'
+# @examples
+# data(BC_dat)
+# BC_dat_EC <- errorCorrection(BC_dat, maxDist = 8, EC_analysis = TRUE)
+# error_correction_circlePlot(edges = BC_dat_EC$edges, vertices = BC_dat_EC$vertices)
+
+error_correction_circlePlot <- function(edges, vertices) {
+
+  fromTo <- igraph::graph_from_data_frame(d = edges, vertices = vertices)
+
+  p <- ggraph::ggraph(fromTo, 'circlepack') +
+    ggraph::geom_node_circle(ggplot2::aes_string(fill = "read_counts"), n = 50) +
+    ggplot2::coord_fixed() +
+    ggplot2::theme(axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   line = ggplot2::element_blank(), rect = ggplot2::element_blank()) +
+    ggplot2::xlab("") +
+    ggplot2::ylab("") +
+    ggplot2::guides(fill = ggplot2::guide_legend(title = "Read Counts"))
+
+  return(p)
+}
+
+#' Tree Plot
+#'
+#' creates a Tree Plot visualising of the barcode clustering as part of the error correction process.
+#'
+#' @param edges a data frame containing edge definitions by two columns calles "from" and "to". Such data frame will be returned by the error_correction function with the EC_analysis parameter set to TRUE.
+#' @param vertices a data frame with at least one column containing a list of nodes (also returned by the error_correction function with the EC_analysis parameter set to TRUE)
+#'
+#' @return a ggplot2 object.
+#' @export
+#'
+# @examples
+# data(BC_dat)
+# BC_dat_EC <- errorCorrection(BC_dat, maxDist = 8, EC_analysis = TRUE)
+# error_correction_treePlot(edges = BC_dat_EC$edges, vertices = BC_dat_EC$vertices)
+
+error_correction_treePlot <- function(edges, vertices) {
+
+  fromTo <- igraph::graph_from_data_frame(d = edges, vertices = vertices)
+
+  p <- ggraph::ggraph(fromTo, layout = 'partition', circular = TRUE) +
+    ggraph::geom_edge_diagonal(lineend = 'round') +
+    ggraph::scale_edge_width(range = c(0.2, 1.5)) +
+    ggraph::geom_node_point(ggplot2::aes_string(colour = "depth", size = "read_counts")) +
+    ggplot2::coord_fixed() +
+    ggplot2::theme(axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   line = ggplot2::element_blank(),
+                   rect = ggplot2::element_blank()) +
+    ggplot2::xlab("") +
+    ggplot2::ylab("") +
+    ggplot2::guides(colour = FALSE,
+                    size = FALSE)
+
+  return(p)
+}
+
+
 #' Plotting a VennDiagram
 #'
 #' @description plotVennDiagramm will create a Venn Diagram ans is based on the VennDiagram package.
@@ -15,7 +134,7 @@
 #' @return ggplot2 object.
 #' @export
 
-plotVennDiagramm <- function(BC_dat, alpha_value = 0.4, colrs = NA, border_color = NA, plot_title = "", legend_sort = NA, annotationSize = 5) {
+plotVennDiagram <- function(BC_dat, alpha_value = 0.4, colrs = NA, border_color = NA, plot_title = "", legend_sort = NULL, annotationSize = 5) {
 
   futile.logger::flog.threshold('FATAL', name = "VennDiagramLogger")
 
@@ -37,7 +156,7 @@ plotVennDiagramm <- function(BC_dat, alpha_value = 0.4, colrs = NA, border_color
   l <- sum(unlist(lapply(unclass(v), methods::is)) == "polygon")
 
   coord_x <- coord_y <- cate <- NULL
-  for(i in 1:(l/2)) {
+  for(i in 1:ifelse(l == 2, l, (l/2))) {
     coord_x <- c(coord_x, unclass(unclass(v)[[i]])$x)
     coord_y <- c(coord_y, unclass(unclass(v)[[i]])$y)
     if(length(BC_dat) > 1) {
@@ -49,8 +168,12 @@ plotVennDiagramm <- function(BC_dat, alpha_value = 0.4, colrs = NA, border_color
 
   dat <- data.frame(x = coord_x, y = coord_y, category = cate)
 
-  if(!is.na(legend_sort)) {
-    dat$category <- factor(dat$category, levels = legend_sort)
+  if(length(legend_sort) != 0) {
+    if(length(unique(dat$category)) != length(legend_sort)) {
+      warning("Number of legend_sort entries does not match the number of BC_dat objects!")
+    } else {
+      dat$category <- factor(dat$category, levels = legend_sort)
+    }
   }
 
   vennPlot <-
@@ -111,10 +234,10 @@ plotVennDiagramm <- function(BC_dat, alpha_value = 0.4, colrs = NA, border_color
 #' @return a visNetwork object.
 #' @export
 #'
-#' @examples
-#' data(BC_dat)
-#' plotDistanceVisNetwork(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL,
-#' complete = FALSE, col_type = "rainbow")
+# @examples
+# data(BC_dat)
+# plotDistanceVisNetwork(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL,
+# complete = FALSE, col_type = "rainbow")
 
 plotDistanceVisNetwork <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL, complete = FALSE, col_type = "rainbow", m = "hamming") {
 
@@ -148,36 +271,16 @@ plotDistanceVisNetwork <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = N
     return(visNetwork::visNetwork(data.frame(), data.frame()))
   }
 
-  # net <- stringdist::stringdistmatrix(methods::slot(BC_dat, "reads")$"barcode", methods::slot(BC_dat, "reads")$"barcode", method = "hamming")
-  # if(complete) {
-  #   net <- t(apply(net, 1, function(x) {
-  #     x[x > min(x[x > 0])] <- 0
-  #     return(x)
-  #   }))
-  #   weight <- net
-  #   net[net > 0] <- 1
-  # } else {
-  #   net[net > minDist] <- 0
-  # }
-  #
-  # net[.getDiagonalIndex(dim(net)[1])] <- 0
-  #
-  # net <- igraph::graph.adjacency(net)
-  #
-  # if(loga) {
-  #   v <- log(methods::slot(BC_dat, "reads")$"read_count")
-  # } else {
-  #   v <- methods::slot(BC_dat, "reads")$"read_count"
-  # }
-
   if(length(ori_BCs) > 0) {
 
     minDists <- .getMinDist(BC_dat, ori_BCs, m)
     colrs <- .generateColors(minDists, type = col_type)
 
     nodes <- data.frame(id = 1:length(igraph::V(net)),
-                        label = methods::slot(BC_dat, "reads")$"barcode",
-                        title = methods::slot(BC_dat, "reads")$"barcode",
+                        label = paste0(methods::slot(BC_dat, "reads")$"barcode", " - ",
+                                       methods::slot(BC_dat, "reads")$"read_count"),
+                        title = paste0(methods::slot(BC_dat, "reads")$"barcode", " - ",
+                                       methods::slot(BC_dat, "reads")$"read_count"),
                         value = v,
                         shadow = TRUE,
                         color.background = as.character(colrs[[1]]),
@@ -203,6 +306,230 @@ plotDistanceVisNetwork <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = N
 
   return(graph_visNetwork)
 }
+
+#' @title Plotting a Distance Network (error correction)
+#' @description plotDistanceVisNetwork will create a graph-like visualisation (ripple plot) of the corresponding barcode sequences
+#' and their similarity based on the ggplot2 and the ggnetwork packages. The nodes represent the barcode sequences and their
+#' respective size reflects the corresponding read counts. Edges between nodes indicate a distance between two barcodes
+#' of maximal \code{minDist}.
+#' If \code{ori_BCs} is provided the effects of the error correction function will be color-coded only for those sequences.
+#'
+#' @param BC_dat a BCdat object.
+#' @param BC_dat_EC the corresponding error corrected BCdat object (EC_analysis has to be TRUE)
+#' @param minDist an integer value representing the maximal distance value for which the graph will
+#' contain edges.
+#' @param loga a logical value indicating the use or non-use of logarithmic read count values.
+#' @param equal_node_sizes a logical value. If TRUE, every node will have the sames size.
+#' @param BC_threshold an integer value representing the number of barcodes for which the color-coding should be applied (starting with the barcodes with the most read counts).
+#' @param ori_BCs a vector of character strings containing the barcode sequences (without the fixed positions of the barcode construct).
+#' @param complete a logical value. If TRUE, every node will have at least one edge.
+#' @param col_type a character sting, choosing one of the available color palettes.
+#' @param m a character string, Method for distance calculation, default value is Hamming distance. Possible values
+#' are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function
+#' of the stringdist-package for more information).
+#'
+#' @return a visNetwork object.
+#' @export
+#'
+# @examples
+# data(BC_dat)
+# BC_dat_EC <- errorCorrection(BC_dat, maxDist = 8, EC_analysis = TRUE)
+
+# plotDistanceVisNetwork(BC_dat, BC_dat_EC, minDist = 1)
+
+plotDistanceVisNetwork_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRUE, equal_node_sizes = TRUE, BC_threshold = NULL, ori_BCs = NULL, complete = FALSE, col_type = "rainbow", m = "hamming") {
+
+  if(dim(methods::slot(BC_dat, "reads"))[1] == 0) {
+    return(visNetwork::visNetwork(data.frame(), data.frame()))
+  }
+
+  colrsEC <- rep("#000000",  length(methods::slot(BC_dat, "reads")$barcode))
+  if(is.null(BC_threshold)) {
+    th <- length(BC_dat_EC$EC_seqs):1
+  } else {
+    th <- BC_threshold:1
+  }
+  if(!is.null(ori_BCs)) {
+    th <- which(ori_BCs %in% methods::slot(BC_dat_EC$BC_dat, "reads")$barcode)
+  }
+
+  index <- NULL
+  for(i in th) {
+    index <- which(methods::slot(BC_dat, "reads")$barcode %in% rev(BC_dat_EC$EC_seqs)[[i]])
+    colrsEC[index] <- RColorBrewer::brewer.pal(12, "Set3")[round(stats::runif(1, min = 1, max = 12))]
+  }
+
+  net <- stringdist::stringdistmatrix(methods::slot(BC_dat, "reads")$"barcode", methods::slot(BC_dat, "reads")$"barcode", method = m)
+  if(complete) {
+    net <- t(apply(net, 1, function(x) {
+      x[x > min(x[x > 0])] <- 0
+      return(x)
+    }))
+    weight <- net
+    net[net > 0] <- 1
+  } else {
+    net[net > minDist] <- 0
+  }
+
+  net[.getDiagonalIndex(dim(net)[1])] <- 0
+
+  net <- igraph::graph.adjacency(net)
+
+  if(equal_node_sizes) {
+    v <- 3
+  } else {
+    if(loga) {
+      v <- log(methods::slot(BC_dat, "reads")$"read_count")
+    } else {
+      v <- methods::slot(BC_dat, "reads")$"read_count"
+    }
+  }
+
+  if(dim(methods::slot(BC_dat, "reads"))[1] == 0) {
+    return(visNetwork::visNetwork(data.frame(), data.frame()))
+  }
+
+  # minDists <- .getMinDist(BC_dat, ori_BCs, m)
+  # colrs <- .generateColors(minDists, type = col_type)
+
+  nodes <- data.frame(id = 1:length(igraph::V(net)),
+                        label = paste0(methods::slot(BC_dat, "reads")$"barcode", " - ",
+                                       methods::slot(BC_dat, "reads")$"read_count"),
+                        title = paste0(methods::slot(BC_dat, "reads")$"barcode", " - ",
+                                       methods::slot(BC_dat, "reads")$"read_count"),
+                        value = v,
+                        shadow = TRUE,
+                        color.background = colrsEC,
+                        color.border = colrsEC,
+                        color.highlight.border <- "gray")
+
+  edges <- data.frame(from = igraph::get.edgelist(net)[, 1], to = igraph::get.edgelist(net)[, 2])
+
+  graph_visNetwork <- visNetwork::visNetwork(nodes, edges, width = "100%")
+  graph_visNetwork <- visNetwork::visOptions(graph_visNetwork, highlightNearest = TRUE)
+  graph_visNetwork <- visNetwork::visIgraphLayout(graph_visNetwork, "layout_nicely")
+  graph_visNetwork <- visNetwork::visHierarchicalLayout(graph_visNetwork, graph_visNetwork)
+
+  return(graph_visNetwork)
+}
+
+
+#' @title Plotting a Distance Network (error correction)
+#'
+#' @description ggplotDistanceGraph will create a graph-like visualisation (ripple plot) of the corresponding barcode sequences
+#' and their similarity based on the ggplot2 and the ggnetwork packages. The nodes represent the barcode sequences and their
+#' respective size reflects the corresponding read counts. Edges between nodes indicate a distance between two barcodes
+#' of maximal \code{minDist}.
+#' If \code{ori_BCs} is provided the node color also refelects the distance of a particular barcode to one of the initial
+#' barcodes.
+#'
+#' @param BC_dat a BCdat object.
+#' @param BC_dat_EC the error corrected BCdat object (the EC_analysis parameter needs to be set to TRUE).
+#' @param minDist an integer value representing the maximal distance for which the graph will
+#' contain edges.
+#' @param loga a logical value, indicating the use or non-use of logarithmic read count values.
+#' @param equal_node_sizes a logical value. If TRUE, every node will have the same size.
+#' @param BC_threshold a nnumeric value, limiting the number of barcodes for which their error correction "history" will be colored (if BC_threshold = 5 then the five biggest barcodes will be evaluated)
+#' @param ori_BCs a vector of character strings containing barcode sequences (without the fixed positions of the barcode construct). Similar to BC_threshold but allowing for barcode identification via sequence.
+#' @param lay a character string, identifying the prefered layout algorithm (see ggnetwork layout option).
+#' @param complete a logical value. If TRUE, every node will have at least one edge.
+#' @param col_type a character sting, choosing one of the available color palettes.
+#' @param outline a nnumeric value which adjusts the thickness of the black outline of each node.
+#' @param m a character string, Method for distance calculation, default value is Hamming distance. Possible values
+#' are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function
+#' of the stringdist-package for more information).
+#' @param scale_nodes a numeric value, scaling the node size.
+#' @param scale_edges a numeric value, scaling the edge size.
+#'
+#' @return a ggplot2 object
+#' @export
+#'
+# @examples
+#
+# data(BC_dat)
+# data(BC_dat_EC)
+#
+# ori_BCs <- c("GGTCGAAGCTTCTTTCGGGCCGCACGGCTGCT",
+#              "CACGATCCGCTTCTATCGCGTGCACTACATGT",
+#              "GCTAAGGGCGATCACATCCACAAGCTTCTTTG")
+# ggplotDistanceGraph_EC(BC_dat, BC_dat_EC, equal_node_sizes = FALSE, ori_BCs = ori_BCs)
+
+ggplotDistanceGraph_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRUE, equal_node_sizes = TRUE, BC_threshold = NULL, ori_BCs = NULL, lay = "fruchtermanreingold", complete = FALSE, col_type = "rainbow", outline = 0.1, m = "hamming", scale_nodes = 1, scale_edges = 1) {
+
+  if(dim(methods::slot(BC_dat, "reads"))[1] == 0) {
+    return(ggplot2::ggplot())
+  }
+
+  colrsEC <- rep("#000000",  length(methods::slot(BC_dat, "reads")$barcode))
+  if(is.null(BC_threshold)) {
+    th <- length(BC_dat_EC$EC_seqs):1
+  } else {
+    th <- BC_threshold:1
+  }
+  if(!is.null(ori_BCs)) {
+    th <- which(ori_BCs %in% methods::slot(BC_dat_EC$BC_dat, "reads")$barcode)
+  }
+
+  index <- NULL
+  for(i in th) {
+    index <- which(methods::slot(BC_dat, "reads")$barcode %in% rev(BC_dat_EC$EC_seqs)[[i]])
+    colrsEC[index] <- RColorBrewer::brewer.pal(12, "Set3")[round(stats::runif(1, min = 1, max = 12))]
+  }
+
+  net <- stringdist::stringdistmatrix(methods::slot(BC_dat, "reads")$"barcode", methods::slot(BC_dat, "reads")$"barcode", method = m)
+  if(complete) {
+    net <- t(apply(net, 1, function(x) {
+      x[x > min(x[x > 0])] <- 0
+      return(x)
+    }))
+    net[net > 0] <- 1
+  } else {
+    net[net > minDist] <- 0
+  }
+
+  if(sum(rowSums(net)) <= 2) {
+    warning("# Only 1 or 0 edges left, due to a ggnetwork problem (version 0.5.1), also graphs with only one edge can't be displayed")
+    return(ggplot2::ggplot() +
+             ggplot2::theme_minimal() +
+             ggplot2::ggtitle("no edges left") +
+             ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)))
+  }
+
+  net <- network::network(net, directed = FALSE)
+
+  if(equal_node_sizes) {
+    v_size <- 3
+  } else {
+      if(loga) {
+        v_size <- log(methods::slot(BC_dat, "reads")$"read_count")
+      } else {
+        v_size <- methods::slot(BC_dat, "reads")$"read_count"
+      }
+  }
+  network::set.vertex.attribute(net, "size", v_size * scale_nodes)
+  network::set.vertex.attribute(net, "names", as.character(methods::slot(BC_dat, "reads")$"barcode"))
+
+  if(!is.null(ori_BCs)) {
+    minDists <- .getMinDist(BC_dat, ori_BCs, m)
+    network::set.vertex.attribute(net, "minDists", minDists)
+  } else {
+    network::set.vertex.attribute(net, "minDists", NA)
+  }
+
+  network::set.vertex.attribute(net, "colors", colrsEC)
+
+  net <- ggnetwork::ggnetwork(net, layout = lay, cell.jitter = 0.75)
+  net$minDists <- as.factor(net$minDists)
+
+  p <- ggplot2::ggplot(net, ggplot2::aes_string(x = "x", y = "y", xend = "xend", yend = "yend")) +
+    ggnetwork::geom_edges(color = "grey50", size = 0.3 * scale_edges) +
+    ggnetwork::theme_blank()
+
+  p <- p + ggnetwork::geom_nodes(size = v_size * scale_nodes, color = colrsEC)
+
+  return(p)
+}
+
 
 #' @title Plotting a Distance Network
 #'
@@ -353,10 +680,10 @@ ggplotDistanceGraph <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL
 #' @return an igraph object.
 #' @export
 #'
-#' @examples
-#' data(BC_dat)
-#' plotDistanceIgraph(BC_dat, minDist = 1, loga = TRUE, ori_BCs, threeD = FALSE,
-#' complete = FALSE, col_type = "rainbow")
+# @examples
+# data(BC_dat)
+# plotDistanceIgraph(BC_dat, minDist = 1, loga = TRUE, ori_BCs, threeD = FALSE,
+# complete = FALSE, col_type = "rainbow")
 
 
 plotDistanceIgraph <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL, threeD = FALSE, complete = FALSE, col_type = "rainbow", leg_pos = "left", inset = -0.125, title = "Distance", m = "hamming") {
@@ -426,7 +753,7 @@ plotDistanceIgraph <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL,
 plotTimeSeries <- function(ov_dat, colr = NULL, tp = NULL, x_label = "time", y_label = "contribution") {
 
   if(!is.matrix(ov_dat)) {
-    stop("# plotTimeSeries requires a numeric matrix")
+    stop("# plotTimeSeries requires a numeric matrix! Try generateTimeSeriesData() first.")
   }
 
   if(sum(ov_dat[, 1]) != 1) {
@@ -472,8 +799,8 @@ plotTimeSeries <- function(ov_dat, colr = NULL, tp = NULL, x_label = "time", y_l
     ggplot2::scale_fill_manual(values = coolr) +
     ggplot2::scale_color_manual(values = coolr) +
     ggplot2::theme(legend.position = "none") +
-    ggplot2::ylab(y_label) + ggplot2::ylab(x_label) + #ggplot2::xlim(tp[1], tp[length(tp)]) +
-    ggplot2::scale_x_discrete(breaks=tp, labels=tp,limits=tp)
+    ggplot2::ylab(y_label) + ggplot2::xlab(x_label) + #ggplot2::xlim(tp[1], tp[length(tp)]) +
+    ggplot2::scale_x_discrete(breaks=tp, labels=tp, limits=tp)
 
   # if(!is.null(labs)) {
   #   print(labs)
@@ -567,9 +894,9 @@ createGDF <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL, col_type
 #' of the stringdist-package for more information).
 #'
 #' @export
-#' @examples
-#' data(BC_dat)
-#' plotClusterTree(BC_dat, tree_est = "UPGMA", type = "unrooted", tipLabel = FALSE)
+# @examples
+# data(BC_dat)
+# plotClusterTree(BC_dat, tree_est = "UPGMA", type = "unrooted", tipLabel = FALSE)
 
 plotClusterTree <- function(BC_dat, tree_est = "NJ", type = "unrooted", tipLabel = FALSE, m = "hamming") {
 
@@ -636,6 +963,7 @@ plotClusterGgTree <- function(BC_dat, tree_est = "NJ", type = "rectangular", m =
 
 }
 
+
 #' @title Plotting a Kirchenplot
 #' @description Generates a barplot based on read counts. If \code{ori_BCs} is provided the bar color reflects the
 #' distance between a particular barcode to one of the provided barcode sequences.
@@ -652,13 +980,12 @@ plotClusterGgTree <- function(BC_dat, tree_est = "NJ", type = "rectangular", m =
 #'
 #' @return a ggplot2 object
 #' @export
-#' @examples
-#' data(BC_dat)
-#' generateKirchenplot(BC_dat, ori_BCs, loga = TRUE, col_type = NULL)
+# @examples
+# data(BC_dat)
+# generateKirchenplot(BC_dat, loga = TRUE, col_type = NULL)
 
 generateKirchenplot <- function(BC_dat, ori_BCs = NULL, ori_BCs2 = NULL, loga = TRUE, col_type = NULL, m = "hamming", setLabels = c("BC-Set 1", "Rest", "BC-Set 2")) {
 
-  # bessere abklärung der parameter => weniger ifs in der eigentlichen funktion
   if(!is.null(ori_BCs2)) {
     generateKirchenplot_separate(BC_dat, ori_BCs1 = ori_BCs, ori_BCs2 = ori_BCs2, loga, col_type, setLabels, m) + ggplot2::theme_light()
   } else {
@@ -741,9 +1068,6 @@ generateKirchenplot_separate <- function(BC_dat, ori_BCs1 = NULL, ori_BCs2 = NUL
       minDist <- .getMinDist(BC_dat, c(ori_BCs1, ori_BCs2), method)
       dist_col <- .generateColors(minDist, type = ifelse(is.null(col_type), "rainbow", col_type))
 
-      #minDist[ind2] <- -1
-#     dist_col[[1]][ind2] <- col2
-#     dist_col[[2]] <- c(col2, dist_col[[2]])
       names(dist_col[[2]]) <- unique(sort(as.numeric(minDist)))
 
       res <- data.frame(methods::slot(BC_dat, "reads"), type = factor(type, levels = c(setLabels[1], setLabels[2], setLabels[3])), minDists = factor(minDist, levels = unique(sort(as.numeric(names(dist_col[[2]]))))), colrs = dist_col[[1]])
@@ -812,9 +1136,9 @@ generateKirchenplot_separate <- function(BC_dat, ori_BCs1 = NULL, ori_BCs2 = NUL
 #' @return ggplot2 object
 #' @export
 #'
-#' @examples
-#' data(BC_dat)
-#' plotReadFrequencies <- function(BC_dat, b = 10, show_it = TRUE)
+# @examples
+# data(BC_dat)
+# plotReadFrequencies <- function(BC_dat, b = 10, show_it = TRUE)
 
 plotReadFrequencies <- function(BC_dat, b = 30, show_it = FALSE, log = FALSE) {
 
@@ -961,9 +1285,9 @@ plotQualityScorePerCycle <- function(source_dir, file_name) {
 #' @return a ggplot2 object
 #' @export
 #'
-#' @examples
-#' data(BC_dat)
-#' plotSeqLogo(BC_dat)
+# @examples
+# data(BC_dat)
+# plotSeqLogo(BC_dat)
 
 plotSeqLogo <- function(BC_dat, colrs = NULL) {
 

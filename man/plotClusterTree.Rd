@@ -23,7 +23,3 @@ of the stringdist-package for more information).}
 \description{
 Generates a tree plot based on a herachical clustering of the complete distance matrix.
 }
-\examples{
-data(BC_dat)
-plotClusterTree(BC_dat, tree_est = "UPGMA", type = "unrooted", tipLabel = FALSE)
-}

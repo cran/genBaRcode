@@ -4,7 +4,7 @@ shinyUI(
 
   pageWithSidebar(
 
-    headerPanel("genBaRcode App"),
+    headerPanel(""),
 
     # SideBar
     sidebarPanel(

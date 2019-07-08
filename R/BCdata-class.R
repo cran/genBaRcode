@@ -46,8 +46,8 @@ checkBarcodeData <- function(object) {
     errors <- c(errors, msg)
   }
 
-  if (length(object@mask) != 1) {
-    msg <- paste("Only one mask needed.")
+  if (length(object@BC_backbone) != 1) {
+    msg <- paste("Only one backbone possible.")
     errors <- c(errors, msg)
   }
 
@@ -62,7 +62,7 @@ checkBarcodeData <- function(object) {
 #' @slot reads data.frame containing barcode sequences and their corresponding read counts.
 #' @slot results_dir character string of the working directory path.
 #' @slot label character string identifying the particular experiment (will be part of the names of any file created).
-#' @slot mask character string of the used barcode design.
+#' @slot BC_backbone character string of the used barcode design (also called barcode backbone).
 #'
 #' @return a BCdat object.
 #' @export
@@ -71,7 +71,7 @@ BCdat <- methods::setClass("BCdat", slots = list(
                                        reads = "data.frame",
                                        results_dir = "character",
                                        label = "character",
-                                       mask = "character"
+                                       BC_backbone = "character"
                                    ), validity = checkBarcodeData
                           )
 
@@ -185,36 +185,36 @@ methods::setReplaceMethod (
 )
 
 methods::setGeneric (
-  name = "maskBC",
+  name = "backbone",
   def = function(object) {
-    standardGeneric("maskBC")
+    standardGeneric("backbone")
   }
 )
 
 
 methods::setMethod (
-  f = "maskBC",
+  f = "backbone",
   signature = "BCdat",
   definition = function(object) {
-    return(object@mask)
+    return(object@BC_backbone)
   }
 )
 
 methods::setGeneric (
-  name = "maskBC<-",
+  name = "backbone<-",
   def = function(object, value) {
-    standardGeneric("maskBC<-")
+    standardGeneric("backbone<-")
   }
 )
 
 methods::setReplaceMethod (
-  f = "maskBC",
+  f = "backbone",
   signature = "BCdat",
   definition = function(object, value) {
     if(methods::is(value, "character")) {
-        object@mask <- value
+        object@BC_backbone <- value
     } else {
-        stop("# the mask slot demands a character")
+        stop("# the BC_backbone slot demands a character")
     }
     return(object)
   }
@@ -254,8 +254,8 @@ setMethod("show", signature = "BCdat",
               cat("\n")
               cat(" results dir: \n")
               cat("      ", object@results_dir, "\n")
-              cat(" barcode layout: \n")
-              cat("      ", object@mask, "\n")
+              cat(" barcode backbone: \n")
+              cat("      ", object@BC_backbone, "\n")
               cat(" label: \n")
               cat("      ", object@label, "\n")
           }

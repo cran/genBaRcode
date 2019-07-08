@@ -4,9 +4,9 @@
 \alias{generateKirchenplot}
 \title{Plotting a Kirchenplot}
 \usage{
-generateKirchenplot(BC_dat, ori_BCs = NULL, ori_BCs2 = NULL, loga = TRUE,
-  col_type = NULL, m = "hamming", setLabels = c("BC-Set 1", "Rest",
-  "BC-Set 2"))
+generateKirchenplot(BC_dat, ori_BCs = NULL, ori_BCs2 = NULL,
+  loga = TRUE, col_type = NULL, m = "hamming",
+  setLabels = c("BC-Set 1", "Rest", "BC-Set 2"))
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}
@@ -31,8 +31,4 @@ a ggplot2 object
 \description{
 Generates a barplot based on read counts. If \code{ori_BCs} is provided the bar color reflects the
 distance between a particular barcode to one of the provided barcode sequences.
-}
-\examples{
-data(BC_dat)
-generateKirchenplot(BC_dat, ori_BCs, loga = TRUE, col_type = NULL)
 }

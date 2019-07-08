@@ -6,7 +6,8 @@
 \usage{
 plotDistanceIgraph(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL,
   threeD = FALSE, complete = FALSE, col_type = "rainbow",
-  leg_pos = "left", inset = -0.125, title = "Distance", m = "hamming")
+  leg_pos = "left", inset = -0.125, title = "Distance",
+  m = "hamming")
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}
@@ -44,9 +45,4 @@ respective size reflects the corresponding read counts. Edges between nodes indi
 of maximal \code{minD}.
 If \code{ori_BCs} is provided the node color also refelects the distance of a particular barcode to one of the initial
 barcodes.
-}
-\examples{
-data(BC_dat)
-plotDistanceIgraph(BC_dat, minDist = 1, loga = TRUE, ori_BCs, threeD = FALSE,
-complete = FALSE, col_type = "rainbow")
 }

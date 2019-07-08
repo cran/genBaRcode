@@ -4,14 +4,12 @@
 \alias{qualityFiltering}
 \title{Quality Filtering}
 \usage{
-qualityFiltering(file_name, source_dir, results_dir, min_score = 30)
+qualityFiltering(file_name, source_dir, min_score = 30)
 }
 \arguments{
 \item{file_name}{a character string containing the name of the source file.}
 
 \item{source_dir}{a character string containing the path to the source directory.}
-
-\item{results_dir}{a character string containing the path to the directory of the results.}
 
 \item{min_score}{an integer value representing the minimal average phred score a read has to achieve in order to be accepted.}
 }

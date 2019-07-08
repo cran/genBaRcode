@@ -4,7 +4,7 @@
 \alias{hybridsIdentification}
 \title{Identifies hybrid barcodes}
 \usage{
-hybridsIdentification(dat, min_seq_length = 2)
+hybridsIdentification(dat, min_seq_length = 10)
 }
 \arguments{
 \item{dat}{a character vector containing barcode sequences or a BCdat object.}
@@ -17,8 +17,4 @@ a hybrid-free frequency table of barcode sequences
 \description{
 Experimental function to identify hybrid barcodes which can occure due to unfinished synthesis of a template
 in-between PCR cycles.
-}
-\examples{
-data(BC_dat)
-hybridsIdentification(BC_dat, min_seq_length = 2)
 }
