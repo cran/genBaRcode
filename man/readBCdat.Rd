@@ -4,8 +4,7 @@
 \alias{readBCdat}
 \title{Data Input}
 \usage{
-readBCdat(path = "./", label = "", BC_backbone = "", file_name,
-  s = ";")
+readBCdat(path, label = "", BC_backbone = "", file_name, s = ";")
 }
 \arguments{
 \item{path}{a character string containing the path to a saved read count table (two columns containing read counts and barcode

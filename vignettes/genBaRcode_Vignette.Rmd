@@ -1,0 +1,985 @@
+---
+title: "Introduction to genBaRcode"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document:
+    fig_caption: yes
+    keep_tex: no
+always_allow_html: yes
+vignette: >
+  %\VignetteIndexEntry{Introduction to genBaRcode}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+  \usepackage{float}
+---
+
+```{r setup, include = FALSE}
+
+#rmarkdown::html_vignette
+
+  knitr::opts_knit$set(
+              self.contained = TRUE)
+
+  knitr::opts_chunk$set(
+    #collapse = TRUE,
+    dpi = 55,
+    fig.retina = 1,
+    comment = "#>"
+  )
+
+  require("genBaRcode")
+  require("ggplot2")
+  
+```
+
+## Table of Contents
+
+### [1. *genBaRcode* Package][]
+
+### [2. Barcode Extraction][]
+
+\hspace{0.5cm}  [2.1 Parallelization][]
+
+\hspace{0.5cm}  [2.2 Manipulating the *BCdat* data type][]
+
+\hspace{0.5cm}  [2.3 Reading and Converting other data formats][]
+
+### [3. Error Correction][]
+
+\hspace{0.5cm} [3.1 Error Correction Approaches][]
+
+\hspace{1cm} [3.1.1 Standard][]
+
+\hspace{1cm} [3.1.2 Graph based][]
+
+\hspace{1cm} [3.1.3 Connectivity based][]
+
+\hspace{1cm} [3.1.4 Clustering][]
+
+### [4. Visualizations][]
+
+\hspace{0.5cm}  [4.1 Fastq Quality Plots][]
+
+\hspace{0.5cm}  [4.2 Plotting Barcode Frequencies][]
+
+\hspace{0.5cm}  [4.3 Plotting Barcode Relations][]
+
+\hspace{0.5cm}  [4.4 Plotting Error Correction Results][]
+
+### [5. Generating and plotting Time Series Data][]
+
+### [6. genBaRcode Shiny-App][]
+
+### [7. Miscellaneous Functions][]
+
+\pagebreak
+
+## 1. *genBaRcode* Package
+
+The *genBaRcode* package is intended to be a comprehensive toolbox for the analysis of genetic barcode data after next generation sequencing (NGS). It combines the necessary functionalities needed for data extraction, analysis and error-correction, in combination with a variety of visualizations. Furthermore, there is an ancillary shiny-app available which provides a graphical user interface for all the basic functions in order to also make the package usable for less programming experienced users.
+
+Since the CRAN installation routine does not support the automatic installation of [Bioconductor](http://bioconductor.org) packages and if you have not installed the necessary [Bioconductor](http://bioconductor.org) packages already, you have to [install](https://www.bioconductor.org/install/) the packages *Biostrings*, *ShortRead*, *S4Vectors* and *ggtree* manually.\newline
+
+```{r eval=FALSE, collapse=TRUE}
+
+  if (!requireNamespace("BiocManager", quietly = TRUE)) {
+      install.packages("BiocManager")
+  }
+
+  BiocManager::install(c("Biostrings", "ShortRead", "S4Vectors", "ggtree"))
+  
+```
+
+After loading the package with the `require("genBaRcode")` (or `library("genBaRcode")`) command, the entire functionality of the package can be accessed. 
+
+\pagebreak
+
+## 2. Barcode Extraction
+
+Normally, every analysis starts with an NGS file, in our case a fasta or a fastq file. In order to extract the genetic barcodes present in the respective file, you have to start with the `processingRawData()` function.\newline 
+
+```{r eval=FALSE, collapse=TRUE}
+
+  require("genBaRcode")
+
+  bb <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
+  source_dir <- system.file("extdata", package = "genBaRcode")
+  
+  BC_data <- processingRawData(file_name = "test_data.fastq.gz", 
+                              source_dir = source_dir, 
+                              results_dir = "/my/results/directory/", 
+                              mismatch = 0, 
+                              label = "test", 
+                              bc_backbone = bb, 
+                              bc_backbone_label = "BC_1", 
+                              min_score = 30, 
+                              min_reads = 2, 
+                              save_it = FALSE, 
+                              seqLogo = FALSE, 
+                              cpus = 1, 
+                              strategy = "sequential", 
+                              full_output = FALSE, 
+                              wobble_extraction = TRUE, 
+                              dist_measure = "hamming")
+
+```
+
+First, you have to choose a NGS file (in our case, as already mentioned, a fasta or fastq file) and assign the name to the parameter `file_name` of the `processingRawData()` function. Two other essential input parameters are called `source_dir` and `results_dir`, here you have to assign a character string describing the path to the chosen file and the path to the directory where you wish to store your results. To make the vignette examples replicable for everybody, we chose the system-specific path to the installation-directory of the package and the included example file, called *test_data.fastq.gz*. \newline Optionally, you can assign a sample specific label to the parameter named `label`. This character string will internally be used as data-object label, as directory name for all the result-files created and furthermore as discriminator within the generated file names.
+Depending on the specific parameter choices, the function will first of all read the declared data file. If the `min_score` parameter was assigned a numeric value greater than `0`, all NGS-reads with an average score smaller than this value will be dismissed. The next step is the extraction of all barcode-carrying sequences. In order to do so you have to either provide one or several barcode-backbone structures or the character string `"none"` which will lead to a simple clustering of every sequence present in the respective NGS file. The `mismatch` parameter offers the possibility to define the number of allowed mismatches between the backbone and the matching nucleotides. No atter if only the clustering should be performed or a barcode-backbone was provided, you can also choose between different distance measures (`dist_measure`) on which the clustering or the backbone matching shall be based on and the `mismatch` parameter will then be interpreted as the maximal allowed difference between either two sequences in order to be clustered together or between a sequence and the respective backbone. The default method is the Hamming distance (`dist_measure = "hamming"`), another common choice would be the Levenshtein distance (`dist_measure = "lv"`) but there are also further methods available (type `?'stringdist-metrics'` in the R-console for further details).
+
+\pagebreak
+Since the package is closely related to several different established genetic barcode constructs, there is also a function which offers all those backbone sequences, it’s called `getBackboneSelection()`.\newline
+
+```{r eval=TRUE, collapse=TRUE}
+
+  getBackboneSelection()
+  
+  bb <- getBackboneSelection(1)
+  show(bb)
+  
+  bb <- getBackboneSelection("BC32-eBFP")
+  show(bb)
+  
+```
+
+The shown example backbones consist of 16 and 32 wobble bases (coded by `N`s) interspersed by fixed triplets in a defined order ([Cornils et al.](https://academic.oup.com/nar/article/42/7/e56/2437431), [Thielecke et al. 2017](https://www.nature.com/articles/srep43249)). \newline
+As mentioned above, it is also possible to provide more than one backbone at once, therefore we would recommend to also define backbone-specific labels (`bc_backbone_label`), since those labels will also be part of almost everything related to the analysis of those particular backbones, e.g. the names for the created directories and file (if you provide no label at all a numericlabel  will be created automatically). 
+After a barcode-extraction based on the hamming distance, the resulting sequences will have exactly the same length as the corresponding backbone pattern(s), since all flanking sequences will be dismissed. Additionally, if you just want to end up only with the so-called wobble bases (coded by `N`s), you have to set the parameter `wobble_extraction` to `TRUE`.
+Furthermore, if you are only interested in barcodes with a certain minimum number of read-counts, you can define such a threshold utilizing the `min_reads` parameter and all barcodes with less reads will be dismissed.
+
+Within R, the resulting data object will be a S4 data-object of type *BCdat* which consists of the extracted barcode sequences, their corresponding read counts, the assigned results directory, the used barcode backbone and the assigned label.
+
+Here you can see the resulting data structure, if only one backbone was provided and the `wobble_extraction` parameter was set to `TRUE`.\newline
+
+```{r eval=TRUE, collapse=TRUE}
+
+  bb <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
+  source_dir <- system.file("extdata", package = "genBaRcode")
+
+  # if no results_dir is provided the source_dir automatically also becomes the results_dir
+  BC_data <- processingRawData(file_name = "test_data.fastq.gz", 
+                              source_dir = source_dir, 
+                              mismatch = 0, 
+                              label = "test", 
+                              bc_backbone = bb, 
+                              bc_backbone_label = "BC_1", 
+                              min_score = 30, 
+                              min_reads = 2, 
+                              save_it = FALSE, 
+                              seqLogo = FALSE, 
+                              cpus = 1, 
+                              strategy = "sequential", 
+                              full_output = FALSE, 
+                              wobble_extraction = TRUE, 
+                              dist_measure = "hamming")
+  
+```
+
+```{r echo = FALSE, eval=TRUE, collapse=TRUE}
+
+  methods::slot(BC_data, "results_dir") <- "/my/results/dir/"
+
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(BC_data)
+
+```
+
+Here, two backbones are provided and `wobble_extraction` was set to FALSE. Besides the longer sequences you can see that it will result in a list of *BCdat* objects.\newline
+
+```{r eval=TRUE, collapse=TRUE}
+
+  # if no results_dir is provided the source_dir automatically also becomes the results_dir
+  BC_data_multiple <- processingRawData(file_name = "test_data.fastq.gz", 
+                              source_dir = source_dir,
+                              mismatch = 0, 
+                              label = "test", 
+                              bc_backbone = getBackboneSelection(1:2), 
+                              bc_backbone_label = c("BC_1", "BC_2"), 
+                              min_score = 30, 
+                              min_reads = 2, 
+                              save_it = FALSE, 
+                              seqLogo = FALSE, 
+                              cpus = 1, 
+                              strategy = "sequential", 
+                              full_output = FALSE, 
+                              wobble_extraction = FALSE, 
+                              dist_measure = "hamming")
+  
+```
+
+
+```{r echo = FALSE, eval=TRUE, collapse=TRUE}
+
+  methods::slot(BC_data_multiple[[1]], "results_dir") <- "/my/results/dir/"
+  methods::slot(BC_data_multiple[[2]], "results_dir") <- "/my/results/dir/"
+
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(BC_data_multiple)
+
+```
+
+
+Now, you can see that if no backbone but the phrase `"none"` is provided the `wobble_extraction` parameter will have no effect. And the `mismatch` parameter was increased to `4`, since this will now define the maximal number of nucleotide differences for the clustering of the raw sequencing reads.\newline
+ 
+```{r eval=TRUE, collapse=TRUE}
+
+  # if no results_dir is provided the source_dir automatically also becomes the results_dir
+  BC_data_2 <- processingRawData(file_name = "test_data.fastq.gz",
+                              source_dir = source_dir,
+                              mismatch = 4,
+                              label = "test",
+                              bc_backbone = "none",
+                              min_score = 30,
+                              min_reads = 2,
+                              save_it = FALSE,
+                              seqLogo = FALSE,
+                              cpus = 1,
+                              strategy = "sequential",
+                              full_output = FALSE,
+                              wobble_extraction = FALSE,
+                              dist_measure = "hamming")
+  
+```
+
+
+```{r echo = FALSE, eval=TRUE, collapse=TRUE}
+
+  methods::slot(BC_data_2, "results_dir") <- "/my/results/dir/"
+
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(BC_data_2)
+
+```
+
+If you assign a `TRUE` to the `save_it` parameter, the barcode-list will be saved as a *csv*-file within the stated results directory (`results_dir`). Additionally, by setting the `seqLogo` parameter to `TRUE`, a [sequence logo](https://academic.oup.com/bioinformatics/article/33/22/3645/3980251) of the entire input file will be generated and also stored in the provided results directory.
+
+### 2.1 Parallelization
+
+Finally, the function offers a possibility to make the necessary calculations in a parallel fashion. The entire process is based on the R-package [*future*](https://cran.r-project.org/web/packages/future/vignettes/future-1-overview.html), therefore you have to state the number of available CPUs (`cpus`) and the appropriate strategy (`strategy`). The default strategy will be `sequential` (meaning only one cpu will be used) but also `multisession` can be chosen (meaning more than one cpu will be used). You can either follow the [link](https://cran.r-project.org/web/packages/future/vignettes/future-1-overview.html) or consult the package internal help pages of the *future* package (by just type `?future::plan()` into the R-console) for more detailed informations.
+
+### 2.2 Manipulating the *BCdat* data type
+
+In order to allow for an easy workflow and to reduce the likelihood for ambiguity errors, the data type contains all important sample-specific data. The specifically adjusted `show()` function will provide you with a quick overview of the data set including metadata (number of barcode reads, read count distribution and sequence lengths, an excerpt of the most abundant barcodes, the path to the results directory, the used barcode backbone and the associated label).\newline
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(BC_data)
+
+```
+
+\pagebreak
+
+The different elements of the data format can easily be accessed via the names of the particular slots.\newline
+
+```{r eval=TRUE, collapse=TRUE}
+
+  head(getReads(BC_data))
+
+  show(getResultsDir(BC_data))
+  
+  show(getBackbone(BC_data))
+  
+  show(getLabel(BC_data))
+
+```
+
+Also modifying or swapping the slot-specific data is easily possible.\newline
+
+```{r eval=FALSE, collapse=TRUE}
+
+  BC_data <- setReads(BC_data, data.frame(read_count = c(1:5), barcode = letters[1:5]))
+  BC_data <- setResultsDir(BC_data, "/my/test/folder/")
+  BC_data <- setBackbone(BC_data, "AAANNNNGGG")
+  BC_data <- setLabel(BC_data, "new label")
+  
+```
+
+### 2.3 Reading and Converting other data formats
+
+There is also the possibility to re-analyze already stored barcode-lists via the function `readBCdat()`. You just have to define the path to the particular file of interest and the corresponding file name. And of course you can also provide a label and a barcode-backbone to complete the stored metadata. And if, for some reason, the stored data file is no standard *csv*-file with a semi-colon as separator, there is another parameter `s` which allows to specify the actual field separator.\newline
+
+```{r eval=FALSE, collapse=TRUE}
+
+  BC_data <- readBCdat(path = "/my/test/folder/", 
+                       label = "test", 
+                       BC_backbone = "AAANNNNCCCC", 
+                       file_name = "test.csv", 
+                       s = ";")
+
+```
+
+\pagebreak
+
+## 3. Error Correction
+
+After extracting the barcode-carrying sequences, you can apply the list of detected barcodes to one of the available error-correction approaches. Since all the necessary analysis steps beforehand (like PCR and NGS) are naturally error-prone and therefore susceptible to small changes within the original nucleotide sequences, we recommend to cluster highly similar sequences together. Conveniently, you can use the *BCdat* object which was already created by the `processingRawData()` function as input for the `errorCorrection()` function.\newline
+
+```{r eval=FALSE, collapse=TRUE}
+
+  BC_data_EC <- errorCorrection(BC_dat = BC_data, 
+                               maxDist = 4,
+                               save_it = FALSE, 
+                               cpus = 1,
+                               strategy = "sequential", 
+                               m = "hamming", 
+                               type = "standard",
+                               only_EC_BCs = TRUE, 
+                               EC_analysis = FALSE, 
+                               start_small = TRUE)
+
+```
+
+Therefore, you have to provide a *BCdat* data-object (`BC_data`) and a numeric value (`maxDist`) specifying the amount of differences tolerated in order to cluster two barcode sequences together. Depending on the choice for `m`, which defines the distance measure (per default it’s the [Hamming distance](https://en.wikipedia.org/wiki/Hamming_distance)), the `maxDist` value defines the maximum number of deviating nucleotides allowed. After we did a sensitivity analysis of the effect of the chosen Hamming-distance threshold and given the initial [Hamming distance](https://en.wikipedia.org/wiki/Hamming_distance) differences of the type of barcodes we are working with, we decided to use one fourth of the total barcode-length as a conservative Hamming-distance limit. The definition of such a threshold accounts for a successively increasing amount of single-nucleotide mutations due to several applied PCR-cycles, a potential loss of sequences due to the fact that only a part of the PCR-material will finally be sequenced and errors finally introduced by NGS. The exact value of this threshold should be adapted according to the used barcode construct, the number of initially marked cells and the particular complexity of the used barcode-library.\newline
+Another reasonable choice could be the Levenstein distance (`m = "lv"`) in which case the `maxDist` value will be interpreted as the maximum number of allowed edit operations. There are also further methods available, since this piece of the function is based on the *stringdist* R-package. A documentation can easily be found via `?'stringdist-metrics'`. 
+All of the available error-correction approaches are based on an interative algorithm, therefore they are hardly parallelizable. Parallel computations are only feasible, if a list of *BCdat* objects is supplied. The function will then automatically initiate a parallel execution depending on the number of data-äobjects and the cpus available. The resulting data-object will then be a list of *BCdat* objects (in the same order as the backbone-sequences). Optionally, the final list of corrected barcode sequences can also be saved as a common *csv*-file (`save_it = TRUE`) in the previously specified results directory. The parameter `type` identifies the chosen error-correction approach (see the following section).\newline
+
+### 3.1 Error Correction Approaches
+
+#### 3.1.1 Standard
+
+The `standard` error correction refers to, per default, a [Hamming-distance](https://en.wikipedia.org/wiki/Hamming_distance) based approach. Starting with the least abundant barcode *BC_small*, the Hamming distances to all other barcodes, in an increasing order of read counts, are calculated. If there is a highly-similar barcode (*BC_similar*, according to the chosen threshold `maxDist` and the distance measure `m`) the read counts of *BC_small* are added to those of *BC_similar* and the sequence of *BC_small* is dismissed. The list of barcodes will be sorted again for read counts after every "merging-event". The error-correction will always be applied starting from the least to the most abundant barcode. If there is more than one highly similar barcode present, the one with the smallest amount of read counts will always be selected first.\newline
+
+
+```{r eval=TRUE, collapse=TRUE}
+
+  BC_data_EC <- errorCorrection(BC_dat = BC_data, 
+                               maxDist = 4,
+                               save_it = FALSE, 
+                               cpus = 1,
+                               strategy = "sequential", 
+                               m = "hamming", 
+                               type = "standard",
+                               only_EC_BCs = TRUE, 
+                               EC_analysis = FALSE, 
+                               start_small = TRUE)
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(BC_data_EC)
+
+```
+
+If, in combination with `type = "standard"` also the parameter *start_small* was set to `FALSE`, the algorithm will now in case of more than one highly similar barcode, select the most abundant one first.\newline
+
+```{r eval=TRUE, collapse=TRUE}
+
+  BC_data_EC <- errorCorrection(BC_dat = BC_data, 
+                               maxDist = 4,
+                               save_it = FALSE, 
+                               cpus = 1,
+                               strategy = "sequential", 
+                               m = "hamming", 
+                               type = "standard",
+                               only_EC_BCs = TRUE, 
+                               EC_analysis = FALSE, 
+                               start_small = FALSE)
+
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(BC_data_EC)
+
+```
+
+
+#### 3.1.2 Graph based
+
+The `graph based` error-correction is based on a graph-theoretic approach. Firstly, for each and every barcode the distances to all the other barcodes will be calculated, all distances `> maxDist` will then be set to zero and all distances `=< maxDist` will be set to one. Secondly, the resulting matrix serves as an adjacency matrix for which existing connected components can be identified. And finally, all of the *member-barcodes* of each of those components will then be clustered together, with the most abundant barcode as the respective cluster-label.\newline
+
+```{r eval=TRUE, collapse=TRUE}
+
+  BC_data_EC <- errorCorrection(BC_dat = BC_data, 
+                               maxDist = 4,
+                               save_it = FALSE, 
+                               cpus = 1,
+                               strategy = "sequential", 
+                               m = "hamming", 
+                               type = "graph based",
+                               only_EC_BCs = TRUE, 
+                               EC_analysis = FALSE, 
+                               start_small = FALSE)
+
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(BC_data_EC)
+
+```
+
+
+#### 3.1.3 Connectivity based
+
+The `connectivity based` error-correction is very similar to the `standard` approach but instead of ordering the available barcodes by their read count values and starting the clustering with the least frequent one, it now will be ordered by the amount of highly-similar analogues for each barcode (again depending on the chosen distance measure `m` and the threshold `maxDist`). Consequently, the clustering will now start with the barcode possessing the lowest number of highly-similar counterparts.\newline
+
+```{r eval=TRUE, collapse=TRUE}
+
+  BC_data_EC <- errorCorrection(BC_dat = BC_data, 
+                               maxDist = 4,
+                               save_it = FALSE, 
+                               cpus = 1,
+                               strategy = "sequential", 
+                               m = "hamming", 
+                               type = "connectivity based",
+                               only_EC_BCs = TRUE, 
+                               EC_analysis = FALSE, 
+                               start_small = FALSE)
+
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(BC_data_EC)
+
+```
+
+#### 3.1.4 Clustering
+
+The error-correction type called `clustering` takes the most abundant barcode, then identifies all highly-similar counterparts (again based on the method `m` and the threshold `maxDist`), adds up all corresponding read-counts to the most-abundant one and finally dismisses all of those added up barcode sequences. Then, the procedure continues with the second most-abundant barcode until all barcodes are processed.\newline
+
+```{r eval=TRUE, collapse=TRUE}
+
+  BC_data_EC <- errorCorrection(BC_dat = BC_data, 
+                               maxDist = 4,
+                               save_it = FALSE, 
+                               cpus = 1,
+                               strategy = "sequential", 
+                               m = "hamming", 
+                               type = "clustering",
+                               only_EC_BCs = TRUE, 
+                               EC_analysis = FALSE, 
+                               start_small = FALSE)
+
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(BC_data_EC)
+
+```
+
+\pagebreak
+
+## 4. Visualizations
+
+After extracting and preprocessing the barcode sequences, there are a variety of visualizations available.
+
+### 4.1 Fastq Quality Plots
+
+Besides visualizing the extracted barcodes, their frequencies and sequence similarities, there are also plot-functions for checking the quality of the initial fastq-file. 
+The function `plotNucFrequency()` allows an overview of the nucleotide frequencies over the entire raw data file.\newline
+
+```{r eval=TRUE, fig.width=2.5, fig.height=2, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  s_dir <- system.file("extdata", package = "genBaRcode")
+
+  plotNucFrequency(source_dir = s_dir, file_name = "test_data.fastq.gz")
+
+```
+
+It is also possible to create a histogram of the *mean* or *median* quality-score distribution over all reads within the *fastq*-file, using the function `plotQualityScoreDis()`.\newline
+
+```{r eval=TRUE, fig.height=1.5, fig.width=5, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  plotQualityScoreDis(source_dir = s_dir, file_name = "test_data.fastq.gz", type = "mean")
+
+```
+
+```{r eval=TRUE, fig.height=1.5, fig.width=5, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  plotQualityScoreDis(source_dir = s_dir, file_name = "test_data.fastq.gz", type = "median")
+
+```
+
+\pagebreak
+
+Furthermore, the function `plotQualityScorePerCycle()` allows for a read-position specific visualization of the *mean* or *median* sequence quality.\newline
+
+```{r eval=TRUE, fig.width=6, fig.height=4, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  plotQualityScorePerCycle(source_dir = s_dir, file_name = "test_data.fastq.gz")
+
+```
+
+Additionally, there is a sequence logo function available providing the opportunity to visually inspect all NGS reads at once.\newline
+
+```{r eval=TRUE, fig.width=6.5, fig.height=1.5, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  show(BC_data)
+
+  plotSeqLogo(BC_dat = BC_data, colrs = NULL)
+
+```
+
+It is also possible to adjust the color selection for each nucleotide.\newline
+
+```{r eval=TRUE, fig.width=6.5, fig.height=1.5, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  # color order correlates to the following nucleotide order A, T, C, G, N
+  col_vec <- c("#000000", 
+               "#000000", 
+               RColorBrewer::brewer.pal(6, "Paired")[c(5, 6)], 
+               "#000000")
+  show(col_vec)
+
+  plotSeqLogo(BC_dat = BC_data, colrs = col_vec)
+
+```
+
+### 4.2 Plotting Barcode Frequencies
+
+The function `generateKirchenplot()` offers the possibility to explore the barcode frequencies of the analyzed sample.\newline
+
+```{r eval=TRUE, fig.width=6, fig.height=2, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+  
+  show(BC_data)
+  
+  generateKirchenplot(BC_dat = BC_data)
+
+```
+
+In certain cases, if you are particularly interested in previously known barcode sequences, you can provide those sequences woth the function call and therefore introducing an additional color-coding visualizing sequence (dis-)similarities.\newline
+
+```{r eval=FALSE, fig.width=6, fig.height=2, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  known_BCs <- c("GGTCGAAGCTTCTTTCGGGCCGCACGGCTGCT", 
+                 "CACGATCCGCTTCTATCGCGTGCACTACATGT", 
+                 "ATTGGGTCCGTCTGAGGGCGTTTCTGCGCCTT")
+  
+  generateKirchenplot(BC_dat = BC_data, ori_BCs = known_BCs)
+
+```
+
+```{r echo=FALSE, eval=TRUE, fig.width=6, fig.height=2, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  known_BCs <- c("GGTCGAAGCTTCTTTCGGGCCGCACGGCTGCT", 
+                 "CACGATCCGCTTCTATCGCGTGCACTACATGT", 
+                 "ATTGGGTCCGTCTGAGGGCGTTTCTGCGCCTT")
+  
+  generateKirchenplot(BC_dat = BC_data, ori_BCs = known_BCs) + ggplot2::theme(legend.text = ggplot2::element_text(size = 6),
+                                                                              legend.key.size = ggplot2::unit(4, "mm"),
+                                                                              legend.title = ggplot2::element_text(size = 7))
+
+```
+
+\pagebreak
+
+Furthermore, if you have two different barcode sets, e.g. a barcode white-list and known contaminations, both of those sets can be provided and will then automatically lead to separate plots.\newline
+
+```{r eval=TRUE, fig.width=7.2, fig.height=4, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  known_BCs <- c("GGTCGAAGCTTCTTTCGGGCCGCACGGCTGCT", 
+                 "CACGATCCGCTTCTATCGCGTGCACTACATGT", 
+                 "ATTGGGTCCGTCTGAGGGCGTTTCTGCGCCTT")
+  contaminations <- c("CACGATCCGCTTCTATCGCGTGCACTACATGC", 
+                      "ATTGGGTCCGTCTGAGGGCGTCTCTGCGCCTT", 
+                      "CACGATCCGCTTCTATCGCGTGCGCTACATGT", 
+                      "TACGATCCGCTTCTATCGCGTGCACTACATGT")
+    
+  generateKirchenplot(BC_dat = BC_data, ori_BCs = known_BCs, ori_BCs2 = contaminations)
+
+```
+
+This function also offers the possibilities to change the scale of the y-axis (`loga`), the distance measure (`m`), the color palettes (`col_type`) and of course the corresponding labels (`setLabels`).\newline
+
+```{r eval=FALSE, fig.width=7.2, fig.height=4, fig.align="center",  fig.cap="Figure 5.4: Extracted barcodes and their abundancies.", collapse=TRUE}
+
+  known_BCs <- c("GGTCGAAGCTTCTTTCGGGCCGCACGGCTGCT", 
+                 "CACGATCCGCTTCTATCGCGTGCACTACATGT", 
+                 "ATTGGGTCCGTCTGAGGGCGTTTCTGCGCCTT")
+  contaminations <- c("CACGATCCGCTTCTATCGCGTGCACTACATGC", 
+                      "ATTGGGTCCGTCTGAGGGCGTCTCTGCGCCTT", 
+                      "CACGATCCGCTTCTATCGCGTGCGCTACATGT", 
+                      "TACGATCCGCTTCTATCGCGTGCACTACATGT")
+    
+  generateKirchenplot(BC_dat = BC_data, 
+                      ori_BCs = known_BCs, ori_BCs2 = contaminations, 
+                      setLabels = c("known BCs", "stuff", "contaminations"), 
+                      loga = TRUE, col_type = "wild", m = "lv")
+
+```
+
+\pagebreak
+Another interesting feature of a data set concerns the read-count frequencies. The following function offers the possibility to plot read-counts as absolute numbers.\newline
+
+```{r eval=TRUE, fig.width=2.5, fig.height=2, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  plotReadFrequencies(BC_dat = BC_data)
+
+```
+
+...or as log-values or the corresponding density.\newline
+
+```{r eval=FALSE, fig.width=2.5, fig.height=2, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  plotReadFrequencies(BC_dat = BC_data, log = TRUE)
+  plotReadFrequencies(BC_dat = BC_data, dens = TRUE)
+
+```
+
+Also the width of the bins (`bw`) or the number of the bins (`b`) are adjustable.\newline
+
+```{r eval=FALSE, fig.width=2.5, fig.height=2, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  plotReadFrequencies(BC_dat = BC_data, bw = 30)
+  plotReadFrequencies(BC_dat = BC_data, b = 30)
+
+```
+
+### 4.3 Plotting Barcode Relations
+
+You can also have a look at the sequence (dis-)similarities of the detected barcode sequences in a graph-like plot. Those plots can be used to identify false-positive barcodes and also to help visualizing the actions of the chosen error-correction approach. 
+The underlying idea is again based on some kind of similarity/distance measure. Therefore, every barcode sequence will be compared to all other sequences and based on the chosen similarity measure the distances will be calculated, per default the [Hamming distance](https://en.wikipedia.org/wiki/Hamming_distance) will be predefined. The nodes within those network-plots represent the detected barcode sequences and (per default) every edge symbolizes a distance between two barcodes of exactly one nucleotide difference (adjustable via the parameter `minDist`). There are different functions available, which basically do the same but are based on different R-packages. The `plotDistanceIgraph()` function is based on the *igraph* package and therefore will also return an *igraph*-object whereas the `ggplotDistanceGraph()` function offers the possibility to create an *ggplot2*-object which than can be further customized. The `plotDistanceVisNetwork()` function is based in the *visNetwork* package and will consequently return a *visNetwork*-object which allows for an interactive exploration of the resulting plot. For instance, you can adjust the layout by clicking and dragging specific network nodes or by hovering the mouse-arrow over a node it is also possible to retrieve the underlying barcode metadata. Additionally, it is also possible to zoom-in and out and see all the corresponding barcode sequences at once.\newline
+
+```{r eval=FALSE}
+
+  plotDistanceVisNetwork(BC_dat = BC_data, minDist = 1, loga = TRUE, m = "hamming")
+  plotDistanceIgraph(BC_dat = BC_data, minDist = 1, loga = TRUE, m = "hamming")
+
+```
+
+\pagebreak
+
+```{r eval=TRUE, fig.width=3, fig.height=3, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  ggplotDistanceGraph(BC_dat = BC_data, minDist = 1, loga = TRUE, m = "hamming")
+
+```
+
+Also, there are additional parameters available. You can provide a list of particular interesting barcodes (`ori_BCs`) which will introduce a similarity based color-coding. The parameter called `lay` allows for the selection of different layout algorithms or, instead of providing a name of the layout algorithm, you can provide a two-column matrix with as many rows as there are nodes in the network, in which case the matrix is used as layout node-coordinates. Default value for `lay` is *fruchtermanreingold*, but possible are also *circle*, *eigen*, *kamadakawai*, *spring* and many more. Additionally, you can choose a custom color palette (*rainbow*, *heat.colors*, *topo.colors*, *greens*, *wild* - see package *grDevices*). And finally, the parameter `legend_size` allows for an adjustment of legend size.\newline
+
+```{r eval=TRUE, fig.width=4.5, fig.height=3, fig.pos = 'H', fig.align='center', fig.show='asis', collapse=TRUE}
+
+  known_BCs <- c("GGTCGAAGCTTCTTTCGGGCCGCACGGCTGCT", 
+                 "CACGATCCGCTTCTATCGCGTGCACTACATGT", 
+                 "ATTGGGTCCGTCTGAGGGCGTTTCTGCGCCTT")
+
+  ggplotDistanceGraph(BC_dat = BC_data, 
+                      minDist = 1, loga = TRUE, m = "hamming", 
+                      ori_BCs = known_BCs, lay = "circle", complete = FALSE, 
+                      col_type = "topo.colors", legend_size = 2)
+
+```
+
+For further customization possibilities the function `createGDF()` will create a *gdf*-file which then can be used as input for an open-source and free software called [*Gephi*](https://gephi.org).\newline
+
+```{r eval=FALSE, collapse=TRUE}
+  
+  createGDF(BC_dat = BC_data, minDist = 1, loga = TRUE, m = "hamming")
+
+```
+
+There is also the possibility to use the same conceptual approach but not visualizing the barcodes as nodes in a network but as branches in a tree.\newline
+
+```{r eval=TRUE, fig.width=4, fig.height=4, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  plotClusterTree(BC_dat = BC_data, tree_est = "UPGMA", 
+                  type = "fan", tipLabel = FALSE, m = "hamming")
+```
+
+```{r eval=TRUE, fig.width=3, fig.height=3, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  plotClusterGgTree(BC_dat = BC_data, tree_est = "NJ", 
+                    type = "rectangular", m = "hamming")
+
+```
+
+### 4.4 Plotting Error Correction Results
+
+Furthermore, the package comes with a variety of functions solely designed to inspect the "insides"" of the error-correction approaches. Each error-correction basically clusters the input sequences based on slightly different “assumptions”. To retrospectively inspect the resulting cluster compositions, e.g. the function `error_correction_clustered_HDs()` will visualize the sequences similarities in the respective clusters. In order to do so, you have to set the `EC_analysis` paramter of the `errorCorrection()`-function to `TRUE`.\newline
+
+```{r eval=FALSE, collapse=TRUE}
+  
+  BC_data_EC <- errorCorrection(BC_dat = BC_data, 
+                                 maxDist = 4,
+                                 save_it = FALSE, 
+                                 cpus = 1,
+                                 strategy = "sequential", 
+                                 m = "hamming", 
+                                 type = "standard",
+                                 only_EC_BCs = FALSE, 
+                                 EC_analysis = TRUE, 
+                                 start_small = FALSE)
+
+  error_correction_clustered_HDs(datEC = BC_data_EC, size = 0.75)
+  
+```
+
+```{r echo=FALSE, fig.width=2, fig.height=2.5, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  BC_data_EC <- errorCorrection(BC_dat = BC_data, 
+                                 maxDist = 4,
+                                 save_it = FALSE, 
+                                 cpus = 1,
+                                 strategy = "sequential", 
+                                 m = "hamming", 
+                                 type = "standard",
+                                 only_EC_BCs = FALSE, 
+                                 EC_analysis = TRUE, 
+                                 start_small = FALSE)
+  
+  error_correction_clustered_HDs(datEC = BC_data_EC, size = 0.75) + ggplot2::theme(axis.title = ggplot2::element_text(size = 8))
+  
+```
+
+You can also visualize the cluster composition in a more graph-like plot and if you are only interested in the final outcome of the error-correction procedure, it is possible to set the `only_EC_BCs` parameter to `TRUE`. Otherwise, all initial barcodes and the iterative nature of the error-correction procedure will be part of the additional metadata.\newline
+
+```{r eval=TRUE, fig.width=4, fig.height=4, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  error_correction_circlePlot(edges = BC_data_EC$edges, vertices = BC_data_EC$vertices)
+
+```
+
+```{r eval=TRUE, fig.width=3, fig.height=3, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  error_correction_treePlot(edges = BC_data_EC$edges, vertices = BC_data_EC$vertices)
+    
+```
+
+But you can also choose the already presented *ggplot2* and *visNetwork* based plots to have a look at the subsumed barcode sequences during error-correction.\newline
+
+```{r eval=TRUE, fig.width=4, fig.height=4, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  ggplotDistanceGraph_EC(BC_dat = BC_data, BC_dat_EC = BC_data_EC, 
+                         minDist = 1, loga = TRUE, m = "hamming")
+  
+```
+
+Or.\newline
+
+```{r eval=FALSE, fig.width=3, fig.height=3, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+  
+  plotDistanceVisNetwork_EC(BC_dat = BC_data, BC_dat_EC = BC_data_EC, 
+                            minDist = 1, loga = TRUE, m = "hamming")
+
+```
+
+And here again, you can define a barcode list of interest to limit the amount of color-coding.\newline
+
+```{r eval=TRUE, fig.width=3, fig.height=3, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  known_BCs <- c("GGTCGAAGCTTCTTTCGGGCCGCACGGCTGCT", 
+                 "CACGATCCGCTTCTATCGCGTGCACTACATGT", 
+                 "ATTGGGTCCGTCTGAGGGCGTTTCTGCGCCTT")
+
+  ggplotDistanceGraph_EC(BC_dat = BC_data, BC_dat_EC = BC_data_EC, 
+                         minDist = 1, loga = TRUE, m = "hamming", ori_BCs = known_BCs)
+  
+```
+
+Or.\newline
+
+```{r eval=FALSE, collapse=TRUE}
+
+  plotDistanceVisNetwork_EC(BC_dat = BC_data, BC_dat_EC = BC_data_EC, 
+                            minDist = 1, loga = TRUE, m = "hamming", ori_BCs = known_BCs)
+
+```
+
+\pagebreak
+
+Or you can just limit the number of regarded barcodes by defining how many of the most abundant barcodes you would like to inspect (in this example, we limited it to the two most-abundant once, `BC_threshold = 2`).\newline
+
+```{r eval=TRUE, fig.width=3, fig.height=3, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  known_BCs <- c("GGTCGAAGCTTCTTTCGGGCCGCACGGCTGCT", 
+                 "CACGATCCGCTTCTATCGCGTGCACTACATGT", 
+                 "ATTGGGTCCGTCTGAGGGCGTTTCTGCGCCTT")
+
+  ggplotDistanceGraph_EC(BC_dat = BC_data, BC_dat_EC = BC_data_EC, 
+                         minDist = 1, loga = TRUE, m = "hamming", BC_threshold = 2)
+  
+```
+
+\pagebreak
+
+## 5. Generating and plotting Time Series Data
+
+The package also provides the possibility to analyze time series data. Let’s assume there are different fastq-files for different points in time, you have to start with the analysis of each file separately. After that, all the separately generated *BCdat* objects have to be arranged in a list in the time-correct order. If you already provided all of the fastq-files to the `processingRawData()` function at once, the resulting *BCdat*-objects will already be arranged in a list. Now, you just have to use that list with the function `generateTimeSeriesData()`. The resulting output can then be visualized utilizing the `plotTimeSeries()` and the `plotVennDiagram()` function.\newline
+
+```{r eval=TRUE, , fig.width=3, fig.height=2.5, fig.pos = 'H', fig.align='center', fig.show='hold', collapse=TRUE}
+
+  # path to the package internal data file
+  source_dir <- system.file("extdata", package = "genBaRcode")
+
+  BC_data_tp1 <- processingRawData(file_name = "test_data.fastq.gz", 
+                              source_dir, 
+                              mismatch = 10, 
+                              label = "tp1", 
+                              bc_backbone = getBackboneSelection(1), 
+                              bc_backbone_label = "BC_1", 
+                              min_score = 10, 
+                              save_it = FALSE)
+  BC_data_tp1 <- errorCorrection(BC_data_tp1, maxDist = 2)
+
+  BC_data_tp2 <- processingRawData(file_name = "test_data.fastq.gz", 
+                              source_dir, 
+                              mismatch = 1, 
+                              label = "tp2", 
+                              bc_backbone = getBackboneSelection(1), 
+                              bc_backbone_label = "BC_1", 
+                              min_score = 30,
+                              min_reads = 1000,
+                              save_it = FALSE)
+  BC_data_tp2 <- errorCorrection(BC_data_tp2, maxDist = 4, type = "clustering")
+
+  BC_data_tp3 <- processingRawData(file_name = "test_data.fastq.gz", 
+                              source_dir, 
+                              mismatch = 0, 
+                              label = "tp3", 
+                              bc_backbone = getBackboneSelection(1), 
+                              bc_backbone_label = "BC_1", 
+                              min_score = 37, 
+                              save_it = FALSE)
+  BC_data_tp3 <- errorCorrection(BC_data_tp3, maxDist = 8, type = "graph based")
+  
+  BC_list <- list(BC_data_tp1, BC_data_tp2, BC_data_tp3)
+  BC_matrix <- generateTimeSeriesData(BC_dat_list = BC_list)
+  plotTimeSeries(ov_dat = BC_matrix)
+  plotVennDiagram(BC_dat = BC_list)
+
+```
+
+As usual, also those two visualization functions come with a variety of layout options.\newline
+
+```{r eval=FALSE, collapse=TRUE}
+
+  # choose colors
+  test_colors <- RColorBrewer::brewer.pal(12, "Set3")
+
+  plotTimeSeries(ov_dat = BC_matrix[1:12, ], 
+                 colr = test_colors, tp = c(1,3,4), 
+                 x_label = "test data", y_label = "test freqs")
+  
+  plotVennDiagram(BC_dat = BC_list, alpha_value = 0.25, 
+                  colrs = c("green", "red", "blue"), border_color = "orange", 
+                  plot_title = "this is the title", 
+                  legend_sort = c("tp2_EC", "tp3_EC", "tp1_EC"), 
+                  annotationSize = 2.5)
+
+```
+
+\pagebreak
+
+## 6. genBaRcode Shiny-App
+
+There is also a shiny-app included within the package, allowing the user to use all main functionality of the package without typing any line of code at all. Or if you are well capable of programming you can also use it as a convenient method to learn about the possibilities of the package. There is an app-internal help and also an option to inspect the source-code necessary to redo all in-app done analysis.
+You can start the app with the `genBaRcode_app()` command and if you already have a data file which you are dying to analyze you just need to provide the path to the directory (`dat_dir`) of this particular file in order to choose it from within the app. If you have none and no path is provided the package`s internal example file will be available for exemplary analysis.\newline
+
+```{r eval=FALSE}
+
+  # start Shiny app with the package internal test data file  
+  genBaRcode_app()
+
+  # start Shiny app with access to a predefined directory
+  genBaRcode_app(dat_dir = "/my/test/directory/")
+  
+```
+
+For more detailed information’s please consult the app-specific vignette.
+
+\pagebreak
+
+## 7. Miscellaneous Functions
+
+Since the package is closely related to several different and already established genetic barcodes, there is also a function which offers all established barcode-backbones, its called `getBackboneSelection()`. This is a convenient way to directly input those, sometimes lengthy, barcode backbones directly into the `processingRawData()` function.\newline
+
+```{r eval=TRUE, out.width = 40, collapse=TRUE}
+
+  getBackboneSelection()
+  
+  bb <- getBackboneSelection(1)
+  show(bb)
+  
+  bb <- getBackboneSelection("BC32-eBFP")
+  show(bb)
+  
+```
+
+If you would like to revisit some already analysed data-files you can just read the already stored *csv*-files via the `readBCdat()` function. The function will read the file and return a *BCdat*-object. And since there are different *csv*-like file formats out there, it is also possible to state the file-specific separator symbol via the parameter `s`.\newline
+
+```{r eval=FALSE, collapse=TRUE}
+
+  BC_data <- readBCdat(path = "/my/test/firectory", label = "test_label", s = ";", 
+                       BC_backbone = "ACTNNGGCNNTGANN", file_name = "test_file.csv")
+
+```
+
+But you can also just transform a `data.frame()` into a valid *BCdat*-object.
+
+```{r eval=FALSE, collapse=TRUE}
+
+  test_data_frame <- data.frame(read_count = seq(100, 400, 100), 
+                                barcode = c("AAAAAAAA", "GGGGGGGG", 
+                                            "TTTTTTTT", "CCCCCCCC"))
+
+  BC_data <- asBCdat(dat = test_data_frame, 
+                      label = "test_label", 
+                      BC_backbone = "CCCNNAAANNTTTNNGGGNN", 
+                      resDir = "/my/results/directory/")
+  
+```
+
+Furthermore, in case there is a need for a direct comparison of two *BCdat*-objects and you have no clue how to do that you can try the `com_pair()` function.
+
+```{r eval=TRUE, collapse=TRUE}
+
+  test_data_frame <- data.frame(read_count = seq(100, 400, 100), 
+                                barcode = c("AAAAAAAA", "GGGGGGGG", 
+                                            "TTTTTTTT", "CCCCCCCC"))
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(test_data_frame)
+
+```
+  
+```{r eval=TRUE, collapse=TRUE}
+
+  BC_data_1 <- asBCdat(dat = test_data_frame, 
+                      label = "test_label_1", 
+                      BC_backbone = "CCCNNAAANNTTTNNGGGNN", 
+                      resDir = getwd())
+
+  test_data_frame <- data.frame(read_count = c(300, 99, 150, 400), 
+                                barcode = c("TTTTTTTT", "AATTTAAA", 
+                                            "GGGGGGGG", "CCCCCCCC"))
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(test_data_frame)                              
+
+```
+
+```{r eval=TRUE, collapse=TRUE}
+  BC_data_2 <- asBCdat(dat = test_data_frame, 
+                      label = "test_label_2", 
+                      BC_backbone = "CCCNNAAANNTTTNNGGGNN", 
+                      resDir = getwd())
+
+  test <- genBaRcode:::com_pair(BC_dat1 = BC_data_1, BC_dat2 = BC_data_2)
+
+```
+
+```{r eval=TRUE, collapse=TRUE}
+
+  show(test)
+  
+```
+
+
+
+

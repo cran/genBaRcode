@@ -5,11 +5,11 @@
 #' a Phred-Score based quality filtering will be conducted and the results will be saved within a csv file.
 #' @param file_name a character string or a character vector, containing the file name(s).
 #' @param source_dir a character string which contains the path to the source files.
-#' @param results_dir a character string which contains the path to the results directory.
+#' @param results_dir a character string which contains the path to the results directory. If no value is assigned the source_dir will automatically also become the results_dir.
 #' @param mismatch an positive integer value, default is 0, if greater values are provided they indicate the number of allowed mismtaches when identifying the barcode constructes.
 #' @param indels a logical value. If TRUE the chosen number of mismatches will be interpreted as edit distance and allow for insertions and deletions as well (currently under construction).
 #' @param label a character string which serves as a label for every kind of created output file.
-#' @param bc_backbone a character string describing the barcode design, variable positions have to be marked with the letter 'N'.
+#' @param bc_backbone a character string describing the barcode design, variable positions have to be marked with the letter 'N'. If only a clustering of the sequenced reads should be applied bc_backbone is expecting the string "none" and the mismatch parameter will then be interpreted as maximum dissimilarity for which two reads will be clustered together.
 #' @param bc_backbone_label a character vector, an optional list of barcode backbone names serving as additional identifier within file names and BCdat labels. If not provided ordinary numbers will serve as alternative.
 #' @param min_score a positive integer value, all fastq sequence with an average score smaller
 #'  then min_score will be excluded, if min_score = 0 there will be no quality score filtering
@@ -19,51 +19,68 @@
 #' @param cpus an integer value, indicating the number of available cpus.
 #' @param strategy since the future package is used for parallelisation a strategy has to be stated, the default is "sequential"  (cpus = 1) and "multisession" (cpus > 1). For further information please read future::plan() R-Documentation.
 #' @param full_output a logical value. If TRUE, additional output files will be generated.
-#' @param bc_extraction a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.
-#' @param dist_method a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
+#' @param wobble_extraction a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.
+#' @param dist_measure a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
 #' Available distance methods are Optimal string aligment ("osa"), Levenshtein ("lv"), Damerau-Levenshtein ("dl"), Hamming ("hamming"), Longest common substring ("lcs"), q-gram ("qgram"), cosine ("cosine"), Jaccard ("jaccard"), Jaro-Winkler ("jw"),
 #' distance based on soundex encoding ("soundex"). For more detailed information see stringdist function of the stringdist-package for more information)
 #'
-#' @return a BCdat object which includes reads, seqs, directories, BC_backbones.
+#' @return a BCdat object which will include read counts, barcode sequences, the results directory and the search barcode backbone.
 #' @export
 #'
 #' @examples
-#'
 #' \dontrun{
-#'
 #' bc_backbone <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
 #'
 #' source_dir <- system.file("extdata", package = "genBaRcode")
 #'
-#' processingRawData(file_name = "test_data.fastq", source_dir, results_dir = getwd(), mismatch = 0,
-#' label = "test", bc_backbone, min_score = 30, indels = FALSE,
-#' min_reads = 2, save_it = TRUE, seqLogo = FALSE)
-#'
+#' BC_dat <- processingRawData(file_name = "test_data.fastq.gz", source_dir,
+#'           results_dir = "/my/test/directory/", mismatch = 2, label = "test", bc_backbone,
+#'           min_score = 30, indels = FALSE, min_reads = 2, save_it = FALSE, seqLogo = FALSE)
 #' }
 
-processingRawData <- function(file_name, source_dir, results_dir, mismatch = 0, indels = FALSE, label = "", bc_backbone, bc_backbone_label = NULL, min_score = 30, min_reads = 2, save_it = TRUE, seqLogo = FALSE, cpus = 1, strategy = "sequential", full_output = FALSE, bc_extraction = TRUE, dist_method = "hamming") {
+processingRawData <- function(file_name, source_dir, results_dir = NULL, mismatch = 0, indels = FALSE, label = "", bc_backbone, bc_backbone_label = NULL, min_score = 30, min_reads = 2, save_it = TRUE, seqLogo = FALSE, cpus = 1, strategy = "sequential", full_output = FALSE, wobble_extraction = TRUE, dist_measure = "hamming") {
 
-  source_dir <- .testDirIdentifier(source_dir)
-  results_dir <- .testDirIdentifier(results_dir)
+  for (i in 1:length(bc_backbone)) {
+    errors <- checkBackbone(bc_backbone[i])
+    if (!is.null(errors)) {
+      stop(c(errors, paste0(" (backbone ", i, ")")))
+    }
+  }
 
-  if(length(bc_backbone_label) != length(bc_backbone)) {
-      if(!is.null(bc_backbone_label)) {
+  if (indels) {
+    stop("Unfortunatly, the indel option is not supported yet.")
+  }
+
+  if (length(source_dir) > 1) {
+    stop("Unfortunatly, so far only one source directory can be assigned.")
+  } else {
+    source_dir <- .testDirIdentifier(source_dir)
+  }
+
+  if (is.null(results_dir)) {
+    results_dir <- source_dir
+  } else {
+    results_dir <- .testDirIdentifier(results_dir)
+  }
+
+  if (length(bc_backbone_label) != length(bc_backbone)) {
+      if (!is.null(bc_backbone_label)) {
         message(paste("#", length(bc_backbone), "BC pattern(s) but", length(bc_backbone_label),"BC pattern label(s)"))
       }
       bc_backbone_label = paste0("backbone_", 1:length(bc_backbone))
   }
 
-  if(length(file_name) > 1) {
+  if (length(file_name) > 1) {
     dat <- processingRawData_multiple(file_name, source_dir, results_dir,
                                       mismatch, indels, label, bc_backbone,
                                       bc_backbone_label, min_score, min_reads,
-                                      save_it, seqLogo, cpus, strategy, full_output, bc_extraction, dist_method)
+                                      save_it, seqLogo, cpus, strategy, full_output, wobble_extraction, dist_measure)
   } else {
-    if(length(file_name) == 1) {
+    if (length(file_name) == 1) {
       dat <- processingRawData_single(file_name, source_dir, results_dir,
                                       mismatch, indels, label, bc_backbone,
                                       bc_backbone_label, min_score, min_reads,
-                                      save_it, seqLogo, full_output, cpus, strategy = "sequential", bc_extraction, dist_method)
+                                      save_it, seqLogo, full_output, cpus, strategy = "sequential", wobble_extraction, dist_measure)
     } else {
       stop("# file_name needs to be a character string (processingRawData)")
     }
@@ -72,31 +89,34 @@ processingRawData <- function(file_name, source_dir, results_dir, mismatch = 0, 
   return(dat)
 }
 
-processingRawData_single <- function(file_name, source_dir, results_dir, mismatch, indels, label, bc_backbone, bc_backbone_label, min_score, min_reads, save_it, seqLogo, full_output, cpus, strategy, bc_extraction, dist_method) {
+processingRawData_single <- function(file_name, source_dir, results_dir, mismatch, indels, label, bc_backbone, bc_backbone_label, min_score, min_reads, save_it, seqLogo, full_output, cpus, strategy, wobble_extraction, dist_measure) {
 
-  if(label == "") {
+  if (label == "") {
     label <- strsplit(file_name, split = "[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][1]
   }
 
-  ending <- strsplit(file_name, split="[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][2]
-  if(min_score > 0 & ending == "fastq" | ending == "FASTQ" | ending == "fq") {
+  ending <- strsplit(file_name, split = "[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][2]
+  if (is.na(ending)) {
+    stop(paste0("# Unknown file format (", file_name, "), so far only fastq and fasta files are supported."))
+  }
+  if (min_score > 0 & ending == "fastq" | ending == "FASTQ" | ending == "fq") {
     dat <- qualityFiltering(file_name, source_dir, min_score)
-    if(length(dat) == 0) {
+    if (length(dat) == 0) {
       warning("# There are no sequences after quality filtering!")
     }
   } else {
-    if(ending == "fasta") {
-      if(min_score > 0) {
+    if (ending == "fasta") {
+      if (min_score > 0) {
         warning("# NGS quality filtering only available for FASTQ file formats! Proceeding without filtering!", call. = FALSE, immediate. = TRUE)
       }
       dat <- ShortRead::readFasta(dirPath = source_dir, pattern = file_name)
     } else {
-      dat <- ShortRead::readFastq(dirPath = source_dir, pattern = file_name)
+      stop(paste0("# Unknown file format (", file_name, "), so far only fastq and fasta files are supported."))
     }
   }
 
-  if(seqLogo) {
-    l<- nchar(as.character(ShortRead::sread(dat)[1]))
+  if (seqLogo) {
+    l <- nchar(as.character(ShortRead::sread(dat)[1]))
     ggplot2::ggsave(filename = paste0("seqLogo_", label, "_NGS.png"),
                     plot = suppressMessages(plotSeqLogo(as.character(ShortRead::sread(dat))) + ggplot2::scale_x_continuous(breaks = c(1, round(l/2), l))),
                     device = "png",
@@ -107,12 +127,12 @@ processingRawData_single <- function(file_name, source_dir, results_dir, mismatc
 
     dat <- extractBarcodes(dat, label, results_dir,
                            mismatch = mismatch, indels = indels,
-                           bc_backbone, full_output, cpus, strategy, bc_extraction, dist_method)
+                           bc_backbone, full_output, cpus, strategy, wobble_extraction, dist_measure)
 
-  if(length(bc_backbone) == 1) {
+  if (length(bc_backbone) == 1) {
     dat <- prepareDatObject(dat[[1]], results_dir, label, bc_backbone, min_reads, save_it)
   } else {
-    for(b in 1:length(bc_backbone)) {
+    for (b in 1:length(bc_backbone)) {
       dat[[b]] <- prepareDatObject(dat[[b]], results_dir, label = paste(label, bc_backbone_label[b], sep = "_"),
                                    bc_backbone[b], min_reads, save_it)
     }
@@ -120,7 +140,7 @@ processingRawData_single <- function(file_name, source_dir, results_dir, mismatc
   return(dat)
 }
 
-processingRawData_multiple <- function(file_name, source_dir, results_dir, mismatch, indels, label, bc_backbone, bc_backbone_label, min_score, min_reads , save_it, seqLogo, cpus, strategy, full_output, bc_extraction, dist_method) {
+processingRawData_multiple <- function(file_name, source_dir, results_dir, mismatch, indels, label, bc_backbone, bc_backbone_label, min_score, min_reads , save_it, seqLogo, cpus, strategy, full_output, wobble_extraction, dist_measure) {
 
   cores <- future::availableCores()
   if(cpus > cores) {
@@ -161,15 +181,15 @@ processingRawData_multiple <- function(file_name, source_dir, results_dir, misma
   tmp <- future.apply::future_lapply(1:length(file_name),
                                      function(i, source_dir, results_dir, mismatch, indels,
                                               label, bc_backbone, bc_backbone_label, min_score,
-                                              min_reads, save_it, seqLogo, full_output, bc_extraction, dist_method) {
+                                              min_reads, save_it, seqLogo, full_output, wobble_extraction, dist_measure) {
 
           processingRawData_single(file_name[i], source_dir, results_dir, mismatch,
                                    indels, label[i], bc_backbone, bc_backbone_label,
-                                   min_score, min_reads, save_it, seqLogo, full_output, cpus = 1, strategy = "sequential", bc_extraction, dist_method)
+                                   min_score, min_reads, save_it, seqLogo, full_output, cpus = 1, strategy = "sequential", wobble_extraction, dist_measure)
 
   }, source_dir, results_dir, mismatch, indels,
      label, bc_backbone, bc_backbone_label, min_score,
-     min_reads, save_it, seqLogo, full_output, bc_extraction, dist_method)
+     min_reads, save_it, seqLogo, full_output, wobble_extraction, dist_measure)
 
   return(tmp)
 }
@@ -191,29 +211,29 @@ processingRawData_multiple <- function(file_name, source_dir, results_dir, misma
 #'
 prepareDatObject <- function(dat, results_dir, label, bc_backbone, min_reads, save_it) {
 
-  if(dim(dat)[1] == 0) {
-    return(methods::new(Class = "BCdat", reads = data.frame(), results_dir = results_dir,
+  if (dim(dat)[1] == 0) {
+    return(methods::new(Class = "BCdat", results_dir = results_dir,
                         label = label,
                         BC_backbone = bc_backbone))
   }
 
   dat <- dat[dat[, 2] > min_reads, ]
-  if(dim(dat)[1] != 0) {
-    dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(unlist(dat[, 2])), barcode = as.character(unlist(dat[, 1])))
-    if(save_it) {
-      if(sum(dim(dat)) > 2) {
-        utils::write.table(dat[, 2:3], paste(results_dir, label, "_BCs.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
-      } else {
-        utils::write.table(dat, paste(results_dir, label, "_BCs.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
-      }
+  if (dim(dat)[1] != 0) {
+    dat <- data.frame(read_count = as.numeric(unlist(dat[, 2])), barcode = as.character(unlist(dat[, 1])))
+    if (save_it) {
+      # if (sum(dim(dat)) > 2) {
+      #   utils::write.table(dat[, 2:3], paste(results_dir, label, "_BCs.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
+      # } else {
+        utils::write.table(dat, paste(results_dir, label, "_BCs.csv", sep=""), sep = ";", row.names = FALSE, col.names = TRUE, quote = FALSE)
+      # }
     }
 
     return(methods::new(Class = "BCdat", reads = dat, results_dir = results_dir,
                         label = label,
                         BC_backbone = bc_backbone))
   } else {
-    warning(paste("only barocdes with less than", min_reads, "reads detected for backbone:", bc_backbone))
-    return(methods::new(Class = "BCdat", reads = data.frame(), results_dir = results_dir,
+    warning(paste0("# There were barcodes detected for backbone '", bc_backbone, "' but all of them with less than ", min_reads, " reads."))
+    return(methods::new(Class = "BCdat", results_dir = results_dir,
                         label = label,
                         BC_backbone = bc_backbone))
   }
@@ -233,8 +253,8 @@ prepareDatObject <- function(dat, results_dir, label, bc_backbone, min_reads, sa
 #' @param full_output a logical value. If TRUE additional output files will be generated in order to identify errors.
 #' @param cpus an integer value, indicating the number of available cpus.
 #' @param strategy since the future package is used for parallelisation a strategy has to be stated, the default is "sequential"  (cpus = 1) and "multiprocess" (cpus > 1). For further information please read future::plan() R-Documentation.
-#' @param bc_extraction a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.
-#' @param dist_method a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
+#' @param wobble_extraction a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.
+#' @param dist_measure a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
 #' Available distance methods are Optimal string aligment ("osa"), Levenshtein ("lv"), Damerau-Levenshtein ("dl"), Hamming ("hamming"), Longest common substring ("lcs"), q-gram ("qgram"), cosine ("cosine"), Jaccard ("jaccard"), Jaro-Winkler ("jw"),
 #' distance based on soundex encoding ("soundex"). For more detailed information see stringdist function of the stringdist-package for more information)
 #'
@@ -247,72 +267,76 @@ prepareDatObject <- function(dat, results_dir, label, bc_backbone, min_reads, sa
 #'
 #' bc_backbone <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
 #' source_dir <- system.file("extdata", package = "genBaRcode")
-#' dat <- ShortRead::readFastq(dirPath = source_dir, pattern = "test_data.fastq")
+#' dat <- ShortRead::readFastq(dirPath = source_dir, pattern = "test_data.fastq.gz")
 #'
 #' extractBarcodes(dat, label = "test", results_dir = getwd(), mismatch = 0,
 #' indels = FALSE, bc_backbone)
 #'
 #' }
 
-extractBarcodes <- function(dat, label, results_dir = "./", mismatch = 0, indels = FALSE, bc_backbone, full_output = FALSE, cpus = 1, strategy = "sequential", bc_extraction, dist_method = "hamming") {
+extractBarcodes <- function(dat, label, results_dir = "./", mismatch = 0, indels = FALSE, bc_backbone, full_output = FALSE, cpus = 1, strategy = "sequential", wobble_extraction = TRUE, dist_measure = "hamming") {
 
-  if(mismatch < 0) {
+  if (sum(methods::is(dat) == "ShortRead") == 0) {
+    stop("# Barcodes can currently only be extracted from ShortRead data objects.")
+  }
+
+  if (mismatch < 0) {
     warning("# mismatch needs to be an integer >= 0")
     mismatch <- 0
   }
 
-  if(cpus < 1) {
+  if (cpus < 1) {
     warning("# cpus needs to be >= 1")
     cpus <- 1
     strategy <- "sequential"
   }
 
   cores <- future::availableCores()
-  if(cpus > cores) {
+  if (cpus > cores) {
     warning(paste("# available number of CPUs is", cores))
     cpus <- ifelse(cores > 1, cores - 1, 1)
   }
 
-  if(cpus > 1 && strategy == "sequential") {
-    if(length(bc_backbone) == 1) {
+  if (cpus > 1 && strategy == "sequential") {
+    if (length(bc_backbone) == 1) {
       cpus <- 1
     } else {
       strategy <- "multiprocess"
     }
   }
-  if(cpus == 1 && strategy == "multiprocess") {
+  if (cpus == 1 && strategy == "multiprocess") {
     strategy <- "sequential"
   }
 
-  if(length(bc_backbone) == 1) {
-    if(bc_backbone == "none") {
+  if (length(bc_backbone) == 1) {
+    if (bc_backbone == "none") {
       tmp <- as.character(ShortRead::sread(dat))
       tmp <- data.frame(table(tmp))
       tmp <- asBCdat(dat = tmp[, c(2, 1)], label = label, BC_backbone = "none", resDir = results_dir)
 
       res <- list()
-      if(mismatch > 0) {
-        tmp <- errorCorrection_single_variation(BC_dat = tmp, maxDist = mismatch, save_it = FALSE, m = dist_method, EC_analysis = FALSE, only_EC_BCs = FALSE)
+      if (mismatch > 0) {
+        tmp <- errorCorrection_single_variation(BC_dat = tmp, maxDist = mismatch, save_it = FALSE, m = dist_measure, EC_analysis = FALSE, only_EC_BCs = FALSE, nt = cpus)
       }
-      res[[1]] <- methods::slot(tmp, "reads")[, 3:2]
+      res[[1]] <- methods::slot(tmp, "reads")[, 2:1]
 
       return(res)
     }
   } else {
-    if(sum(bc_backbone == "none") > 0) {
+    if (sum(bc_backbone == "none") > 0) {
       stop("# At the moment it is only possible to analyse the data either with no backbone at all or with one or multiple actual backbones.")
     }
   }
 
   tmp <- list(list(), ShortRead::sread(dat))
 
-  for(i in 1:length(bc_backbone)) {
+  for (i in 1:length(bc_backbone)) {
     tmp <- BC_matching(tmp, label[i], results_dir, mismatch, indels, bc_backbone[i], full_output)
   }
 
-  if(bc_extraction) {
+  if (wobble_extraction) {
   # future limit == 500MB
-    if(utils::object.size(tmp) <= 499000000) {
+    if (utils::object.size(tmp) <= 499000000) {
 
       oplan <- future::plan()
       on.exit(future::plan(oplan), add = TRUE)
@@ -324,7 +348,7 @@ extractBarcodes <- function(dat, label, results_dir = "./", mismatch = 0, indels
     }
   } else {
     res <- vector(mode = "list", length = length(tmp[[1]]))
-    for(i in 1:length(tmp[[1]])) {
+    for (i in 1:length(tmp[[1]])) {
       res_tmp <- sort(table(tmp[[1]][[i]]), decreasing = TRUE)
       res[[i]] <- data.frame(seqs = names(res_tmp), n = as.numeric(res_tmp))
     }
@@ -344,11 +368,11 @@ BC_matching <- function(dat, label, results_dir, mismatch, indels, bc_backbone, 
                                            algorithm = "auto")
   match_matrix <- as.data.frame(match_index)
 
-  if(sum(duplicated(match_matrix$group)) != 0) {
+  if (sum(duplicated(match_matrix$group)) != 0) {
     warning("# Duplicated backbone matches (mismatch == 0)")
-    if(full_output) {
+    if (full_output) {
       group <- unique(match_matrix$group[duplicated(match_matrix$group)])
-      utils::write.table(match_matrix[match_matrix$group %in% group, ], paste(results_dir, label, "_", bc_backbone, "_duplicatedMatcher_m0.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
+      utils::write.table(match_matrix[match_matrix$group %in% group, ], paste(results_dir, label, "_", bc_backbone, "_duplicatedMatcher_m0.csv", sep = ""), sep = ";", row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
     match_matrix <- match_matrix[!duplicated(match_matrix$group), ]
   }
@@ -356,23 +380,23 @@ BC_matching <- function(dat, label, results_dir, mismatch, indels, bc_backbone, 
   BCs <- substr(as.character(seqs)[match_matrix$group],
                 start = match_matrix$start,
                 stop = match_matrix$end)
-  if(!indels & length(table(nchar(BCs))) > 1) {
+  if (!indels & sum(nchar(BCs) != read_length) > 0) {
     BCs <- fixBorderlineBCs(BCs, mismatch, match_matrix, read_length)
   }
   seqs <- seqs[-match_matrix$group]
 
   # second, w/ mismatch but smnaller data set
-  if(mismatch > 0) {
+  if (mismatch > 0) {
     match_index <- Biostrings::vmatchPattern(bc_backbone, seqs,
                                              max.mismatch = mismatch, min.mismatch = 1,
                                              with.indels = indels, fixed = FALSE,
                                              algorithm = "auto")
     match_matrix <- data.frame(match_index)
-    if(sum(duplicated(match_matrix$group)) != 0) {
+    if (sum(duplicated(match_matrix$group)) != 0) {
       warning("# Duplicated backbone matches (mismatch > 0)")
-      if(full_output) {
+      if (full_output) {
         group <- unique(match_matrix$group[duplicated(match_matrix$group)])
-        utils::write.table(match_matrix[match_matrix$group %in% group, ], paste(results_dir, label, "_", bc_backbone, "_duplicatedMatcher_m, ", mismatch, ", .csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
+        utils::write.table(match_matrix[match_matrix$group %in% group, ], paste(results_dir, label, "_", bc_backbone, "_duplicatedMatcher_m, ", mismatch, ", .csv", sep = ""), sep = ";", row.names = FALSE, col.names = TRUE, quote = FALSE)
       }
       match_matrix <- match_matrix[!duplicated(match_matrix$group), ]
     }
@@ -382,17 +406,17 @@ BC_matching <- function(dat, label, results_dir, mismatch, indels, bc_backbone, 
                      stop = match_matrix$end)
     seqs <- seqs[-match_matrix$group]
 
-    if(!indels & length(table(nchar(BCsTmp))) > 1) {
+    if (!indels & sum(nchar(BCsTmp) != read_length) > 0) {
       BCsTmp <- fixBorderlineBCs(BCsTmp, mismatch, match_matrix, read_length)
     }
     BCs <- c(BCs, BCsTmp)
   }
 
-  if(!indels & length(table(nchar(BCs))) > 1) {
+  if (!indels & length(table(nchar(BCs))) > 1) {
     warning("# different barcode lengths (function: BCmatching)")
-    if(full_output) {
+    if (full_output) {
       print(table(nchar((as.character(unlist(dat))))))
-      utils::write.table(BCs, paste(results_dir, label, "_", bc_backbone, "_diffLengthBCs.csv", sep=""), sep=";", row.names = FALSE, col.names = FALSE, quote = FALSE)
+      utils::write.table(BCs, paste(results_dir, label, "_", bc_backbone, "_diffLengthBCs.csv", sep = ""), sep = ";", row.names = FALSE, col.names = FALSE, quote = FALSE)
     }
   }
 
@@ -403,25 +427,26 @@ BC_matching <- function(dat, label, results_dir, mismatch, indels, bc_backbone, 
 
 fixBorderlineBCs <- function(BCs, mismatch, match_matrix, read_length) {
 
-  for(m in 1:mismatch) {
-    if(sum(match_matrix$start == (1-m)) > 0) {
-      BCs[match_matrix$start == (1-m)] <- paste0(paste(rep("N", m), collapse = ""), BCs[match_matrix$start == (1-m)])
-    } else {
-      if(sum(match_matrix$end == read_length+m) > 0) {
-        BCs[match_matrix$start == read_length] <- paste0(BCs[match_matrix$start == 0], paste(rep("N", m), collapse = ""))
-      } else {
-        warning("# different barcode lengths (function: fixBorderBCs)")
-      }
+  for (m in 1:mismatch) {
+    if (sum(match_matrix$start == (1 - m)) > 0) {
+      BCs[match_matrix$start == (1 - m)] <- paste0(paste(rep("N", m), collapse = ""), BCs[match_matrix$start == (1 - m)])
+    }
+    if (sum(match_matrix$end == read_length + m) > 0) {
+        BCs[match_matrix$end == read_length + m] <- paste0(BCs[match_matrix$end == read_length + m], paste(rep("N", m), collapse = ""))
     }
   }
+  if (length(unique(nchar(BCs))) > 1) {
+    warning(paste0("# different barcode lengths (", paste(unique(nchar(BCs)), collapse = "-"), " nucs, function: fixBorderBCs)"))
+  }
+
   return(BCs)
 }
 
 extractWobble <- function(i, tmp, bc_backbone, indels, label) {
 
   BCs <- tmp[[1]][[i]]
-  if(length(BCs) != 0) {
-    if(!indels) {
+  if (length(BCs) != 0) {
+    if (!indels) {
       wobble_pos <- .getWobblePos(bc_backbone[i])
 
       BCs <- strsplit(BCs, split = "")
@@ -523,13 +548,14 @@ hybridsIdentification <- function(dat, min_seq_length = 10) {
 #'
 #' \dontrun{
 #' source_dir <- system.file("extdata", package = "genBaRcode")
-#' qualityFiltering(file_name = "test_data.fastq", source_dir, results_dir = getwd(), min_score = 30)
+#' qualityFiltering(file_name = "test_data.fastq.gz", source_dir,
+#' results_dir = getwd(), min_score = 30)
 #' }
 
 qualityFiltering <- function(file_name, source_dir, min_score = 30) {
 
   dat <- ShortRead::readFastq(dirPath = source_dir, pattern = file_name)
-  scores <- methods::as(ShortRead::FastqQuality(Biostrings::quality(attr(dat, "quality"))), "matrix")
+  scores <- ShortRead::alphabetScore(attr(dat, "quality"))
 
-  return(dat[(rowSums(scores)/dim(scores)[2]) > min_score])
+  return(dat[(scores / ShortRead::width(dat)) > min_score])
 }

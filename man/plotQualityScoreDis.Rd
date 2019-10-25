@@ -4,7 +4,8 @@
 \alias{plotQualityScoreDis}
 \title{Plotting Quality Score Distribution}
 \usage{
-plotQualityScoreDis(source_dir, file_name, type)
+plotQualityScoreDis(source_dir, file_name, type = "median",
+  rel = FALSE)
 }
 \arguments{
 \item{source_dir}{a character string of the path to the source directory.}
@@ -12,6 +13,8 @@ plotQualityScoreDis(source_dir, file_name, type)
 \item{file_name}{a character string of the file name.}
 
 \item{type}{a character string, possible values are "mean" and "median".}
+
+\item{rel}{a logical value. If TRUE the y-axis will show relative frequency instead of the absolut counts.}
 }
 \value{
 a ggplot2 object.

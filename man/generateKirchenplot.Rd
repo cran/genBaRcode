@@ -17,11 +17,11 @@ generateKirchenplot(BC_dat, ori_BCs = NULL, ori_BCs2 = NULL,
 
 \item{loga}{a logical value, indicating the use or non-use of logarithmic read count values.}
 
-\item{col_type}{character sting, choosing one of the availabe color palettes, e.g. rainbow.}
+\item{col_type}{character string, choosing one of the availabe color palettes ("rainbow", "heat.colors", "topo.colors", "greens", "wild" - see package "grDevices")}
 
 \item{m}{a character string, Method for distance calculation, default value is Hamming distance. Possible values
 are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function
-of the stringdist-package for more information).}
+of the stringdist-package for more information). If neither `ori_BCs` nor `ori_BCs2` are provided with input the choice of `m` does not matter.}
 
 \item{setLabels}{a character vector, containing three strings serving as plot labels.}
 }

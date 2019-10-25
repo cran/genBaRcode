@@ -4,18 +4,19 @@
 \alias{processingRawData}
 \title{Data processing}
 \usage{
-processingRawData(file_name, source_dir, results_dir, mismatch = 0,
-  indels = FALSE, label = "", bc_backbone, bc_backbone_label = NULL,
-  min_score = 30, min_reads = 2, save_it = TRUE, seqLogo = FALSE,
-  cpus = 1, strategy = "sequential", full_output = FALSE,
-  bc_extraction = TRUE, dist_method = "hamming")
+processingRawData(file_name, source_dir, results_dir = NULL,
+  mismatch = 0, indels = FALSE, label = "", bc_backbone,
+  bc_backbone_label = NULL, min_score = 30, min_reads = 2,
+  save_it = TRUE, seqLogo = FALSE, cpus = 1,
+  strategy = "sequential", full_output = FALSE,
+  wobble_extraction = TRUE, dist_measure = "hamming")
 }
 \arguments{
 \item{file_name}{a character string or a character vector, containing the file name(s).}
 
 \item{source_dir}{a character string which contains the path to the source files.}
 
-\item{results_dir}{a character string which contains the path to the results directory.}
+\item{results_dir}{a character string which contains the path to the results directory. If no value is assigned the source_dir will automatically also become the results_dir.}
 
 \item{mismatch}{an positive integer value, default is 0, if greater values are provided they indicate the number of allowed mismtaches when identifying the barcode constructes.}
 
@@ -23,7 +24,7 @@ processingRawData(file_name, source_dir, results_dir, mismatch = 0,
 
 \item{label}{a character string which serves as a label for every kind of created output file.}
 
-\item{bc_backbone}{a character string describing the barcode design, variable positions have to be marked with the letter 'N'.}
+\item{bc_backbone}{a character string describing the barcode design, variable positions have to be marked with the letter 'N'. If only a clustering of the sequenced reads should be applied bc_backbone is expecting the string "none" and the mismatch parameter will then be interpreted as maximum dissimilarity for which two reads will be clustered together.}
 
 \item{bc_backbone_label}{a character vector, an optional list of barcode backbone names serving as additional identifier within file names and BCdat labels. If not provided ordinary numbers will serve as alternative.}
 
@@ -42,30 +43,27 @@ then min_score will be excluded, if min_score = 0 there will be no quality score
 
 \item{full_output}{a logical value. If TRUE, additional output files will be generated.}
 
-\item{bc_extraction}{a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.}
+\item{wobble_extraction}{a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.}
 
-\item{dist_method}{a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
+\item{dist_measure}{a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
 Available distance methods are Optimal string aligment ("osa"), Levenshtein ("lv"), Damerau-Levenshtein ("dl"), Hamming ("hamming"), Longest common substring ("lcs"), q-gram ("qgram"), cosine ("cosine"), Jaccard ("jaccard"), Jaro-Winkler ("jw"),
 distance based on soundex encoding ("soundex"). For more detailed information see stringdist function of the stringdist-package for more information)}
 }
 \value{
-a BCdat object which includes reads, seqs, directories, BC_backbones.
+a BCdat object which will include read counts, barcode sequences, the results directory and the search barcode backbone.
 }
 \description{
 Reads the corresponding fast(a/q) file(s), extracts the defined barcode constructs and counts them. Optionally,
 a Phred-Score based quality filtering will be conducted and the results will be saved within a csv file.
 }
 \examples{
-
 \dontrun{
-
 bc_backbone <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
 
 source_dir <- system.file("extdata", package = "genBaRcode")
 
-processingRawData(file_name = "test_data.fastq", source_dir, results_dir = getwd(), mismatch = 0,
-label = "test", bc_backbone, min_score = 30, indels = FALSE,
-min_reads = 2, save_it = TRUE, seqLogo = FALSE)
-
+BC_dat <- processingRawData(file_name = "test_data.fastq.gz", source_dir,
+          results_dir = "/my/test/directory/", mismatch = 2, label = "test", bc_backbone,
+          min_score = 30, indels = FALSE, min_reads = 2, save_it = FALSE, seqLogo = FALSE)
 }
 }

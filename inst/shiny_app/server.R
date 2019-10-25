@@ -51,7 +51,10 @@ makeGeneralHistory <- function() {
 shinyServer(
   function(input, output, session) {
 
-    if(is.null(getOption("genBaRcode-shinyDir"))) {
+    require("genBaRcode")
+    require("ggplot2")
+
+    if (is.null(getOption("genBaRcode-shinyDir"))) {
       stopApp("Please use the 'genBaRcode_app' function to start the app!")
     }
 
@@ -69,7 +72,7 @@ shinyServer(
     ############################
 
     output$selection <- renderUI({
-      if(fileTrigger$depend() == 0) {
+      if (fileTrigger$depend() == 0) {
         processing_UI_choose_file()
       } else {
         options("genBaRcode-info" = "")
@@ -78,8 +81,8 @@ shinyServer(
     })
 
     output$parameters <- renderUI({
-      if(fileTrigger$depend() == 0 & !is.null(input$fileType)) {
-        if(input$fileType == "fastq") {
+      if (fileTrigger$depend() == 0 & !is.null(input$fileType)) {
+        if (input$fileType == "fastq") {
           processing_UI_fastq()
         } else {
           if(input$fileType == "csv") {
@@ -94,7 +97,7 @@ shinyServer(
     })
 
     output$end <- renderUI({
-      if(fileTrigger$depend() == 0) {
+      if (fileTrigger$depend() == 0) {
         processing_UI_end()
       } else {
         NULL
@@ -119,7 +122,7 @@ shinyServer(
     ##################
 
     capText <- reactive({
-      if(fileTrigger$depend() == 0 | is.null(input$plot_click)) {
+      if (fileTrigger$depend() == 0 | is.null(input$plot_click)) {
         return(getOption("genBaRcode-info"))
       }
     })
@@ -129,8 +132,8 @@ shinyServer(
     #############################
 
     dat <- reactive({
-      if(length(input$f_name) == 1) {
-        if(input$error_corr & input$plot_type != "HD Graph" & input$plot_type != "interactive HD Graph" & input$backbone != "none") {
+      if (length(input$f_name) == 1) {
+        if (input$error_corr & input$plot_type != "HD Graph" & input$plot_type != "interactive HD Graph" & input$backbone != "none") {
           isolate(genHist$update_sCode(rbind(genHist$show_sCode(), sCode_snippets(type = "ec", gDir = givenDir))))
           tmp <- BC()$datEC
           tmp@reads <- slot(BC()$datEC, "reads")[1:input$maxBCs_EC, ]
@@ -139,7 +142,7 @@ shinyServer(
           tmp@reads <- slot(BC()$dat, "reads")[1:input$maxBCs, ]
         }
       } else {
-        if(input$error_corr & input$backbone != "none") {
+        if (input$error_corr & input$backbone != "none") {
           tmp <- BC()$datEC
         } else {
           tmp <- BC()$dat
@@ -150,7 +153,7 @@ shinyServer(
     })
 
     finalPlot2 <- reactive({
-      if(input$plot_type == "interactive HD Graph" & fileTrigger$depend() != 0) {
+      if (input$plot_type == "interactive HD Graph" & fileTrigger$depend() != 0) {
         isolate(genHist$update_sCode(rbind(genHist$show_sCode(), sCode_snippets(type = "inHD_Graph", gDir = givenDir))))
         return(plotDistanceVisNetwork(dat(), minDist = 1, loga = TRUE, oriBCs(), complete = input$compl, col_type = input$palette))
       }
@@ -158,30 +161,30 @@ shinyServer(
 
     finalPlot <-  reactive({
 
-      if(fileTrigger$depend() == 0) {
+      if (fileTrigger$depend() == 0) {
         return(ggplot2::ggplot() + ggplot2::theme_minimal())
       }
 
-      if(input$plot_type == "Kirchenplot") {
+      if (input$plot_type == "Kirchenplot") {
         isolate(genHist$update_sCode(rbind(genHist$show_sCode(), sCode_snippets(type = "kirchenplot", gDir = givenDir))))
         return(generateKirchenplot(dat(), ori_BCs = oriBCs(), loga = input$loga, col_type = input$palette))
       }
 
-      if(input$plot_type == "Read Frequencies") {
+      if (input$plot_type == "Read Frequencies") {
         isolate(genHist$update_sCode(rbind(genHist$show_sCode(), sCode_snippets(type = "readFreq", gDir = givenDir))))
         return(plotReadFrequencies(dat(), b = input$bins, show_it = FALSE))
       }
 
-      if(input$plot_type == "SeqLogo") {
+      if (input$plot_type == "SeqLogo") {
         isolate(genHist$update_sCode(rbind(genHist$show_sCode(), sCode_snippets(type = "seqLo", gDir = givenDir))))
         return(plotSeqLogo(as.character(slot(dat(), "reads")$"barcode")))
       }
 
-      if(input$plot_type == "SeqLogo - NGS reads") {
-        if(is.null(seqL)) {
+      if (input$plot_type == "SeqLogo - NGS reads") {
+        if (is.null(seqL)) {
 
-          ending <- strsplit(input$f_name, split="[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][2]
-          if(ending == "fasta") {
+          ending <- strsplit(input$f_name, split = "[.]", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][2]
+          if (ending == "fasta") {
             seqL <<- ShortRead::readFasta(dirPath = givenDir, pattern = input$f_name)
           } else {
             seqL <<- ShortRead::readFastq(dirPath = givenDir, pattern = input$f_name)
@@ -192,24 +195,24 @@ shinyServer(
         return(plotSeqLogo(as.character(ShortRead::sread(seqL))) + ggplot2::scale_x_continuous(breaks = c(1, round(l/2), l)))
       }
 
-      if(input$plot_type == "Tree") {
-        if(input$tree_est == "Neighbor-Joining") { tEst <- "NJ" }
-        if(input$tree_est == "Unweighted Pair Group Method (UPGMA)") { tEst <- "UPGMA" }
+      if (input$plot_type == "Tree") {
+        if (input$tree_est == "Neighbor-Joining") { tEst <- "NJ" }
+        if (input$tree_est == "Unweighted Pair Group Method (UPGMA)") { tEst <- "UPGMA" }
 
         return(plotClusterGgTree(dat(), type = input$tree_style, tree_est = tEst))
       }
 
-      if(input$plot_type == "HD Graph") {
+      if (input$plot_type == "HD Graph") {
         isolate(genHist$update_sCode(rbind(genHist$show_sCode(), sCode_snippets(type = "HD_Graph", gDir = givenDir))))
         return(ggplotDistanceGraph(dat(), minDist = 1, loga = TRUE, oriBCs(), lay = input$graph_layout, complete = input$compl, col_type = input$palette) + ggplot2::theme(panel.grid.major = ggplot2::element_blank(), panel.grid.minor = ggplot2::element_blank()))
       }
 
-      if(input$plot_type == "Time Series") {
+      if (input$plot_type == "Time Series") {
         isolate(genHist$update_sCode(rbind(genHist$show_sCode(), sCode_snippets(type = "timeS_plot"))))
         return(plotTimeSeries(dat()[[2]]))
       }
 
-      if(input$plot_type == "Venn Diagram") {
+      if (input$plot_type == "Venn Diagram") {
         isolate(genHist$update_sCode(rbind(genHist$show_sCode(), sCode_snippets(type = "timeS_Venn"))))
         return(plotVennDiagram(dat()[[1]]) + ggplot2::theme(panel.grid.major = ggplot2::element_blank(), panel.grid.minor = ggplot2::element_blank()))
       }
@@ -221,23 +224,23 @@ shinyServer(
     ####################
 
     output$table_overview <- renderDataTable({
-      if(fileTrigger$depend() == 0) {
+      if (fileTrigger$depend() == 0) {
         return(NULL)
       }
 
-      if((length(input$f_name) == 0) | is.null(input$f_name)) {
+      if ((length(input$f_name) == 0) | is.null(input$f_name)) {
         d <- NULL
       }
 
-      if(length(input$f_name) == 1) {
-        if(input$backbone == "none") {
+      if (length(input$f_name) == 1) {
+        if (input$backbone == "none") {
           d <- data.frame(feature = c("number of barcodes",
                                       "read count min",
                                       "read count median",
                                       "read count mean",
                                       "read count max"),
                           data = c(as.character(dim(slot(BC()$dat, "reads"))[1]),
-                                   as.character(summary(slot(BC()$dat, "reads")[, 1])[c(1, 3, 4, 6)]))
+                                   as.character(round(summary(slot(BC()$dat, "reads")[, 1])[c(1, 3, 4, 6)])))
           )
         } else {
           d <- data.frame(feature = c("number of barcodes",
@@ -252,8 +255,8 @@ shinyServer(
                                       "read count max (EC)"),
                           data = c(as.character(dim(slot(BC()$dat, "reads"))[1]),
                                    as.character(dim(slot(BC()$datEC, "reads"))[1]),
-                                   as.character(summary(slot(BC()$dat, "reads")[, 1])[c(1, 3, 4, 6)]),
-                                   as.character(summary(slot(BC()$datEC, "reads")[, 1])[c(1, 3, 4, 6)]))
+                                   as.character(round(summary(slot(BC()$dat, "reads")[, 1])[c(1, 3, 4, 6)])),
+                                   as.character(round(summary(slot(BC()$datEC, "reads")[, 1])[c(1, 3, 4, 6)])))
           )
         }
       }
@@ -278,10 +281,10 @@ shinyServer(
     })
 
     output$table_dat <- renderDataTable({
-      if(length(input$f_name) == 1) {
-        return(slot(BC()$dat, "reads")[, 2:3])
+      if (length(input$f_name) == 1) {
+        return(slot(BC()$dat, "reads")) # [, 2:3]
       }
-      if(length(input$f_name) > 1) {
+      if (length(input$f_name) > 1) {
         tmp <- data.frame(BC = row.names(BC()$dat[[2]]))
         tmp <- cbind(tmp, as.data.frame(BC()$dat[[2]]))
         colnames(tmp) <- c("BC", paste("tp", 1:dim(BC()$dat[[2]])[2]))
@@ -295,7 +298,7 @@ shinyServer(
        "no error correction available"
       } else {
         if(length(input$f_name) == 1) {
-          return(slot(BC()$datEC, "reads")[, 2:3])
+          return(slot(BC()$datEC, "reads")) # [, 2:3]
         }
         if(length(input$f_name) > 1) {
           tmp <- data.frame(BC = row.names(BC()$datEC[[2]]))
@@ -497,7 +500,7 @@ shinyServer(
     }
 
     G_and_T_UI <- function() {
-      if(fileTrigger$depend() != 0) {
+      if (fileTrigger$depend() != 0) {
         span(
           conditionalPanel(
             condition = "input.plot_type != 'interactive HD Graph'",
@@ -516,33 +519,50 @@ shinyServer(
           )
         )
       }
-      # if(input$backbone == "none") {
-      #   hideTab(inputId = "table_stuff", target = "barcode list (EC)")
-      # }
     }
 
     observe({
-      if(!(is.null(input$plot_type)) & fileTrigger$depend() != 0) {
-        if(input$plot_type == "interactive HD Graph") {
+      if (!(is.null(input$plot_type)) & fileTrigger$depend() != 0) {
+        if (input$plot_type == "interactive HD Graph") {
           output$final_plot2 <- visNetwork::renderVisNetwork({
             finalPlot2()
           })
         } else {
-          if(input$plot_type != "") {
+          if (input$plot_type != "") {
             output$final_plot <- plotly::renderPlotly({
               p <- suppressMessages(plotly::ggplotly(finalPlot()))
               p$elementId <- NULL
-              if(input$plot_type != "SeqLogo - NGS" & input$plot_type != "SeqLogo" & input$plot_type != "Tree" & input$plot_type != "Venn Diagram" & input$plot_type != "Time Series") {
-                p$x$data[[ifelse(input$plot_type == "HD Graph" & length(p$x$data) > 1, 2, 1)]]$text <- paste(
-                  paste("BC:", methods::slot(dat(), "reads")$barcode),
-                  paste("reads:", methods::slot(dat(), "reads")$read_count), sep = "<br />")
+              if (input$plot_type != "SeqLogo - NGS" & input$plot_type != "SeqLogo" & input$plot_type != "Tree" & input$plot_type != "Venn Diagram" & input$plot_type != "Time Series") {
+                content <- paste(paste("BC:", methods::slot(dat(), "reads")$barcode),
+                                 paste("reads:", methods::slot(dat(), "reads")$read_count), sep = "<br />")
+
+                if (input$plot_type == "HD Graph") {
+                  if (is.null(oriBCs())) {
+                    p$x$data[[2]]$text <- content
+                  } else {
+                    for (p_depth in 2:length(p$x$data)) {
+                      tmp_p_x_data <- matrix(unlist(strsplit(p$x$data[[p_depth]]$text, split = "<br />")), ncol = 4, byrow = TRUE)
+                      index_p_x_data <- match(tmp_p_x_data[, 2], methods::slot(dat(), "reads")$barcode)
+
+                      p$x$data[[p_depth]]$text <- content[index_p_x_data]
+                    }
+                  }
+                } else {
+                  if (input$plot_type == "Kirchenplot") {
+                    if (is.null(oriBCs())) {
+                      p$x$data[[1]]$text <- content
+                    } else {
+                      for (p_depth in 2:length(p$x$data)) {
+                        tmp_p_x_data <- matrix(unlist(strsplit(p$x$data[[p_depth]]$text, split = "<br />")), ncol = 3, byrow = TRUE)
+                        index_p_x_data <- as.numeric(unlist(strsplit(tmp_p_x_data[, 2], split = ":")))
+                        index_p_x_data <- index_p_x_data[!is.na(index_p_x_data)]
+
+                        p$x$data[[p_depth]]$text <- content[index_p_x_data]
+                      }
+                   }
+                }
                 p$x$layout$margin$l <- p$x$layout$margin$l + 15
-              } else {
-                p$x$data[[1]]$text[seq(1, length(methods::slot(dat(), "reads")$barcode) * 3, 1)] <- unlist(lapply(
-                  paste(paste("BC:", methods::slot(dat(), "reads")$barcode, "<br />"),
-                        paste("reads:", methods::slot(dat(), "reads")$read_count)), function(x) {
-                          c(x, x, NA)
-                        }))
+                }
               }
               p
             })
@@ -556,15 +576,15 @@ shinyServer(
     ####################
 
     oriBCs <- reactive({
-      if(fileTrigger$depend() == 0 | identical(isolate(history$old()), input$file1$datapath)) {
+      if (fileTrigger$depend() == 0 | identical(isolate(history$old()), input$file1$datapath)) {
         return(NULL)
       } else {
-        if(!is.null(input$file1$name)){
+        if (!is.null(input$file1$name)){
           end <- unlist(strsplit(input$file1$name, split = "[.]"))[2]
-          if(end == "csv") {
+          if (end == "csv") {
             s <- ";"
           } else {
-            if(end == "txt") {
+            if (end == "txt") {
               s <- ""
             } else {
               warning("invalid file format!")
@@ -591,8 +611,8 @@ shinyServer(
     })
 
     observeEvent(input$save, {
-      if(flag) {
-        if(input$plot_type == "interactive HD Graph") {
+      if (flag) {
+        if (input$plot_type == "interactive HD Graph") {
           visNetwork::visSave(graph = finalPlot2(), file = paste(givenDir, input$plot_type, "_", slot(BC()$dat, "label"), ".html", sep = ""))
         }
       }
@@ -600,7 +620,7 @@ shinyServer(
 
     observeEvent(input$go, {
       req(input$f_name)
-      if(unlist(strsplit(input$f_name, split = "[.]"))[2] != "csv") {
+      if (unlist(strsplit(input$f_name, split = "[.]"))[2] != "csv") {
         req(input$mm, input$minReads, input$backbone)
       }
       fileTrigger$trigger()
@@ -610,48 +630,53 @@ shinyServer(
     BC <- reactive({
 
       bcp <- "not defined"
-      cpus <- parallel::detectCores() - floor(parallel::detectCores()/2)
+      cpus <- floor(future::availableCores()/2)
 
-      if(input$backbone == "BC32-GFP") {
-        bcp <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
-      }
-      if(input$backbone == "BC32-Venus") {
-        bcp <- "CGANNAGANNCTTNNCGANNCTANNGGANNCTTNNCGANNAGANNCTTNNCGANNCTANNGGANNCTTNNCGANNAGANN"
-      }
-      if(input$backbone == "BC32-eBFP") {
-        bcp <- "CTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNCTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNCTANNCAGNN"
-      }
-      if(input$backbone == "BC32-T-Sapphire") {
-        bcp <- "CAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNCAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNCAGNNATCNN"
-      }
-      if(input$backbone == "BC16-GFP") {
-        bcp <- "AGATCNNTAGNNTCCNNAAGNNTCGNNAAGNNTCGNNAGTNNTAGAT"
-      }
-      if(input$backbone == "BC16-Venus") {
-        bcp <- "CTANNCTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNGAT"
-      }
-      if(input$backbone == "BC16-mCherry") {
-        bcp <- "CTANNCAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNGAT"
-      }
-      if(input$backbone == "BC16-Cerulean") {
-        bcp <- "CTANNCACNNAGANNCTTNNCGANNCTANNGGANNCTTNNGAT"
-      }
-      if(input$backbone == "none") {
+      # if(input$backbone == "BC32-GFP") {
+      #   bcp <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
+      # }
+      # if(input$backbone == "BC32-Venus") {
+      #   bcp <- "CGANNAGANNCTTNNCGANNCTANNGGANNCTTNNCGANNAGANNCTTNNCGANNCTANNGGANNCTTNNCGANNAGANN"
+      # }
+      # if(input$backbone == "BC32-eBFP") {
+      #   bcp <- "CTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNCTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNCTANNCAGNN"
+      # }
+      # if(input$backbone == "BC32-T-Sapphire") {
+      #   bcp <- "CAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNCAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNCAGNNATCNN"
+      # }
+      # if(input$backbone == "BC16-GFP") {
+      #   bcp <- "AGATCNNTAGNNTCCNNAAGNNTCGNNAAGNNTCGNNAGTNNTAGAT"
+      # }
+      # if(input$backbone == "BC16-Venus") {
+      #   bcp <- "CTANNCTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNGAT"
+      # }
+      # if(input$backbone == "BC16-mCherry") {
+      #   bcp <- "CTANNCAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNGAT"
+      # }
+      # if(input$backbone == "BC16-Cerulean") {
+      #   bcp <- "CTANNCACNNAGANNCTTNNCGANNCTANNGGANNCTTNNGAT"
+      # }
+
+      if (input$backbone == "none") {
         bcp <- input$backbone
+      } else {
+        if (input$ownDesign != "") {
+          bcp <- input$ownDesign
+        } else {
+          if (input$backbone != "") {
+            bcp <- getBackboneSelection(input$backbone)
+          }
+        }
       }
 
-      if(input$ownDesign != "") {
-        bcp <- input$ownDesign
-      }
-
-      if(fileTrigger$depend() != 0) {
-        if(length(input$f_name) == 1) {
+      if (fileTrigger$depend() != 0) {
+        if (length(input$f_name) == 1) {
           withProgress(message = 'Data processing', value = 0, {
-            if(unlist(strsplit(input$f_name, split = "[.]"))[2] != "csv") {
+            if (unlist(strsplit(input$f_name, split = "[.]"))[2] != "csv") {
               incProgress(1/3, detail = "Barcode extraction...")
               tmp <- get_dat_single(bcp, givenDir, cpus)
               incProgress(2/3, detail = "Error Correction...")
-              if(input$backbone != "none") {
+              if (input$backbone != "none") {
                 tmp_EC <- errorCorrection(tmp, maxDist = input$maxHD, save_it = flag, cpus = cpus)
               } else {
                 tmp_EC <- methods::new(Class = "BCdat", reads = data.frame(), results_dir = results_dir,
@@ -662,7 +687,7 @@ shinyServer(
               isolate(genHist$update_sCode(rbind(genHist$show_sCode(), sCode_snippets(type = "read", gDir = givenDir))))
             } else {
               incProgress(1/3, detail = paste0("Reading ", input$f_name, "..."))
-              tmp <- readBCdat(path = givenDir, label = unlist(strsplit(input$f_name, split = "[.]"))[1], mask = bcp, file_name = input$f_name, s = ";")
+              tmp <- readBCdat(path = givenDir, label = unlist(strsplit(input$f_name, split = "[.]"))[1], BC_backbone = bcp, file_name = input$f_name, s = ";")
               incProgress(2/3, detail = "Error Correction...")
               tmp_EC <- errorCorrection(tmp, maxDist = input$maxHD, save_it = FALSE, cpus = cpus)
               incProgress(3/3, detail = "Finished...")
@@ -698,7 +723,7 @@ shinyServer(
               tmp <- TMP <- list()
               for(csvFiles in 1:length(input$f_name)) {
                 incProgress(1/3 + (1/3 / (length(input$f_name) * csvFiles)), detail = paste("Reading ", input$f_name[csvFiles],"...", sep = ""))
-                TMP[[csvFiles]] <- readBCdat(path = givenDir, label = unlist(strsplit(input$f_name[csvFiles], split = "[.]"))[1], mask = bcp, file_name = input$f_name[csvFiles], s = ";")
+                TMP[[csvFiles]] <- readBCdat(path = givenDir, label = unlist(strsplit(input$f_name[csvFiles], split = "[.]"))[1], BC_backbone = bcp, file_name = input$f_name[csvFiles], s = ";")
               }
               tmp[[1]] <- TMP
               tmp[[2]] <- generateTimeSeriesData(TMP)
@@ -710,7 +735,7 @@ shinyServer(
               } else {
                 tmp_EC[[1]] <- methods::new(Class = "BCdat", reads = data.frame(), results_dir = results_dir,
                                             label = "no EC possible",
-                                            BC_backbone = bc_backbone)
+                                            BC_backbone = ifelse(is.null(BC_backbone), "", BC_backbone))
                 tmp_EC[[2]] <- data.frame()
               }
               incProgress(3/3, detail = "Finished...")
@@ -776,7 +801,7 @@ shinyServer(
                read = isolate(paste("BC_dat <- processingRawData(file_name = '", input$f_name, "', source_dir = '", gDir,
                                     "', results_dir = '", gDir, "', mismatch = ", input$mm, ", bc_backbone = '", bcp,
                                     "', min_score = ", ifelse(input$quaFil, 30, 0),", min_reads = ", input$minReads, ", seqLogo = TRUE)", sep = "")),
-               readCsv = isolate(paste("BC_dat <- readBCdat(path = '", gDir, "', label = 'csvFile', mask = 'not_defined', file_name = '", input$f_name, "', s = ';')")),
+               readCsv = isolate(paste("BC_dat <- readBCdat(path = '", gDir, "', label = 'csvFile', BC_backbone = 'not_defined', file_name = '", input$f_name, "', s = ';')")),
                ec = isolate(paste("BC_dat_EC <- errorCorrection(BC_dat, maxDist = ", input$maxHD, ")", sep = "")),
                oriBCs = paste("oriBCs <- as.character(unlist(read.table('", input$file1$datapath, "', header = FALSE, sep = ", s, ", fill = TRUE)))", sep = ""),
                kirchenplot = isolate(paste("generateKirchenplot(", ifelse(input$error_corr, "BC_dat_EC", "BC_dat"), ", ", ifelse(identical(isolate(history$old()), input$file1$datapath), " ", "oriBCs = oriBCs,"), " loga = ", input$loga, ", col_type = ", ifelse(is.null(input$palette), "NULL", input$palette), ")", sep = "")),

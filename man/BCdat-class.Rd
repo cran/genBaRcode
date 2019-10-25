@@ -4,12 +4,9 @@
 \name{BCdat-class}
 \alias{BCdat-class}
 \alias{BCdat}
-\title{BCdat class}
-\value{
-a BCdat object.
-}
+\title{BCdat class.}
 \description{
-S4 data class containing every relevant information.
+BCdat class.
 }
 \section{Slots}{
 

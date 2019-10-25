@@ -21,7 +21,9 @@
 #' @param start_small a logical value. If TRUE, the error correcton type "standard" will cluster always the smallest highly similar BC with the BC of interest. IF FALSE, the error correcton type "standard" will adapt its cluster strategy and cluster always BC of interest with the most frequent highly similar BC.
 #'
 #' @export
-# @examples errorCorrection(BC_dat, maxDist = 8, save_it = FALSE, m = "hamming")
+#' @examples
+#' data(BC_dat)
+#' BC_dat_EC <- errorCorrection(BC_dat, maxDist = 8, save_it = FALSE, m = "hamming")
 
 errorCorrection <- function(BC_dat, maxDist, save_it = FALSE, cpus = 1, strategy = "sequential", m = "hamming", type = "standard", only_EC_BCs = TRUE, EC_analysis = FALSE, start_small = TRUE) {
 
@@ -164,17 +166,17 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
     return(BC_dat)
   }
 
-  if(start_small) {
+  if (start_small) {
     func <- min
   } else {
     func <- max
   }
 
   # dat could be dismissed
-  dat <- methods::slot(BC_dat, "reads")[, 2:3]
+  dat <- methods::slot(BC_dat, "reads")
   dat <- dat[order(dat[, 1], decreasing = FALSE), ]
 
-  if(EC_analysis) {
+  if (EC_analysis) {
     datEC <- as.list(as.character(dat$barcode))
     datEC_reads <- as.list(as.numeric(dat$read_count))
     datEC_index_list <- as.character(dat$barcode)
@@ -198,7 +200,6 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
   keep <- rep(TRUE, length(bcs))
 
   while (merging_barcode < length(bcs)) {
-
     candidates <- (abs(basesOccurences[[1]][(merging_barcode + 1):length(bcs)] - basesOccurences[[1]][merging_barcode]) +
                      abs(basesOccurences[[2]][(merging_barcode + 1):length(bcs)] - basesOccurences[[2]][merging_barcode]) +
                      abs(basesOccurences[[3]][(merging_barcode + 1):length(bcs)] - basesOccurences[[3]][merging_barcode])) / 2
@@ -223,7 +224,7 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
     }
 
     nIndex <- index + merging_barcode
-    if(EC_analysis) {
+    if (EC_analysis) {
 
       ECindex_merg <- which(as.character(seqs[merging_barcode]) == datEC_index_list)
       ECindex_target <- which(as.character(seqs[nIndex]) == datEC_index_list)
@@ -253,7 +254,7 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
       seqs[nIndex:(sIndex - 1)] <- seqs[(nIndex + 1):sIndex]
       seqs[sIndex] <- tmpSeqs
 
-      for(i in 1:length(basesOccurences)) {
+      for (i in 1:length(basesOccurences)) {
         basesOccurences[[i]][fis] <- basesOccurences[[i]][lis]
         basesOccurences[[i]][sIndex] <- tmpBasesOccurences[i]
       }
@@ -279,10 +280,10 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
     fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
                     data.frame(from = rev(from_part), to = rev(to_part)))
 
-    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 3])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 2])))
+    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
 
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -294,7 +295,7 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     return(BC_dat)
   }
 }
@@ -308,7 +309,7 @@ errorCorrection_single_biggest <- function(BC_dat, maxDist, save_it = FALSE, m =
     return(BC_dat)
   }
 
-  dat <- methods::slot(BC_dat, "reads")[, 2:3]
+  dat <- methods::slot(BC_dat, "reads")
   dat <- dat[order(dat[, 1], decreasing = FALSE), ]
 
   merging_barcode <- 1
@@ -365,10 +366,10 @@ errorCorrection_single_biggest <- function(BC_dat, maxDist, save_it = FALSE, m =
     fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
                     data.frame(from = rev(from_part), to = rev(to_part)))
 
-    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 3])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 2])))
+    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
 
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -380,7 +381,7 @@ errorCorrection_single_biggest <- function(BC_dat, maxDist, save_it = FALSE, m =
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     return(BC_dat)
   }
   return(BC_dat)
@@ -394,7 +395,7 @@ errorCorrection_single <- function(BC_dat, maxDist, save_it = FALSE, m = "hammin
     return(BC_dat)
   }
 
-  dat <- methods::slot(BC_dat, "reads")[, 2:3]
+  dat <- methods::slot(BC_dat, "reads")
   dat <- dat[order(dat[, 1], decreasing = FALSE), ]
 
   merging_barcode <- 1
@@ -451,10 +452,10 @@ errorCorrection_single <- function(BC_dat, maxDist, save_it = FALSE, m = "hammin
     fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
                     data.frame(from = rev(from_part), to = rev(to_part)))
 
-    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 3])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 2])))
+    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
 
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -466,7 +467,7 @@ errorCorrection_single <- function(BC_dat, maxDist, save_it = FALSE, m = "hammin
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     return(BC_dat)
   }
   return(BC_dat)
@@ -480,7 +481,7 @@ errorCorrection_single_connections <- function(BC_dat, maxDist, save_it = FALSE,
     return(BC_dat)
   }
 
-  dat <- methods::slot(BC_dat, "reads")[, 2:3]
+  dat <- methods::slot(BC_dat, "reads")
   dat <- dat[order(dat[, 1], decreasing = FALSE), ]
 
   if(EC_analysis) {
@@ -549,10 +550,10 @@ errorCorrection_single_connections <- function(BC_dat, maxDist, save_it = FALSE,
     fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
                     data.frame(from = rev(from_part), to = rev(to_part)))
 
-    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 3])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 2])))
+    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
 
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -564,7 +565,7 @@ errorCorrection_single_connections <- function(BC_dat, maxDist, save_it = FALSE,
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     return(BC_dat)
   }
   return(BC_dat)
@@ -578,7 +579,7 @@ errorCorrection_single_clustering_absolute <- function(BC_dat, maxDist, save_it 
     return(BC_dat)
   }
 
-  dat <- methods::slot(BC_dat, "reads")[, 2:3]
+  dat <- methods::slot(BC_dat, "reads")
   dat <- dat[order(dat[, 1], decreasing = TRUE), ]
 
   if(EC_analysis) {
@@ -631,10 +632,10 @@ errorCorrection_single_clustering_absolute <- function(BC_dat, maxDist, save_it 
     fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
                     data.frame(from = rev(from_part), to = rev(to_part)))
 
-    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 3])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 2])))
+    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
 
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -646,7 +647,7 @@ errorCorrection_single_clustering_absolute <- function(BC_dat, maxDist, save_it 
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     return(BC_dat)
   }
   return(BC_dat)
@@ -661,7 +662,7 @@ errorCorrection_single_clustering_stepwise <- function(BC_dat, maxDist, save_it 
     return(BC_dat)
   }
 
-  dat <- methods::slot(BC_dat, "reads")[, 2:3]
+  dat <- methods::slot(BC_dat, "reads")
   dat <- dat[order(dat[, 1], decreasing = TRUE), ]
 
   if(EC_analysis) {
@@ -722,10 +723,10 @@ errorCorrection_single_clustering_stepwise <- function(BC_dat, maxDist, save_it 
     fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
                     data.frame(from = rev(from_part), to = rev(to_part)))
 
-    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 3])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 2])))
+    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
 
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -737,7 +738,7 @@ errorCorrection_single_clustering_stepwise <- function(BC_dat, maxDist, save_it 
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     return(BC_dat)
   }
   return(BC_dat)
@@ -751,7 +752,7 @@ errorCorrection_single_graphComp <- function(BC_dat, maxDist, save_it = FALSE, m
     return(BC_dat)
   }
 
-  dat <- methods::slot(BC_dat, "reads")[, 2:3]
+  dat <- methods::slot(BC_dat, "reads")
   dat <- dat[order(dat[, 1], decreasing = TRUE), ]
 
   if(EC_analysis) {
@@ -801,10 +802,10 @@ errorCorrection_single_graphComp <- function(BC_dat, maxDist, save_it = FALSE, m
     fromTo <- rbind(data.frame(from = "origin", to = dat[, 2]),
                     data.frame(from = rev(from_part), to = to_part))
 
-    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 3])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 2])))
+    vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
 
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -816,7 +817,7 @@ errorCorrection_single_graphComp <- function(BC_dat, maxDist, save_it = FALSE, m
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(pos = 1:dim(dat)[1], read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
     return(BC_dat)
   }
   return(BC_dat)

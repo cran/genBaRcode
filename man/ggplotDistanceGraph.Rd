@@ -19,11 +19,11 @@ contain edges.}
 
 \item{ori_BCs}{a vector of character strings containing the barcode sequences (without the fixed positions of the barcode construct).}
 
-\item{lay}{a character string, identifying the prefered layout algorithm (see ggnetwork layout option).}
+\item{lay}{a character string, identifying the prefered layout algorithm (see ggnetwork layout option, "?gplot.layout"). Default value is "fruchtermanreingold", but possible are also "circle", "eigen", "kamadakawai", "spring" and many more. Or the user provides a two-column matrix with as many rows as there are nodes in the network, in which case the matrix is used as nodes coordinates.}
 
 \item{complete}{a logical value. If TRUE, every node will have at least one edge.}
 
-\item{col_type}{a character sting, choosing one of the available color palettes.}
+\item{col_type}{a character sting, choosing one of the available color palettes ("rainbow", "heat.colors", "topo.colors", "greens", "wild" - see package "grDevices").}
 
 \item{outline}{a nnumeric value which adjusts the thickness of the black outline of each node.}
 

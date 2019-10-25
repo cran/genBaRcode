@@ -1,8 +1,20 @@
 
-.compare_pair <- function(BC_dat1 = NULL, BC_dat2 = NULL) {
+#' Compairing two BCdat Objects
+#'
+#' @param BC_dat1 the first BCdat object.
+#' @param BC_dat2 the second BCdat object.
+#'
+#' @return a list containing the shared and the unqiue barcodes.
+#' @export
+#'
+com_pair <- function(BC_dat1 = NULL, BC_dat2 = NULL) {
 
-  if(is.null(BC_dat1) & is.null(BC_dat2)) {
-    stop("Two BCdat-objects required!")
+  if (is.null(BC_dat1) & is.null(BC_dat2)) {
+    stop("# Two BCdat-objects required!")
+  }
+
+  if (methods::is(BC_dat1)[1] != "BCdat" | methods::is(BC_dat2)[1] != "BCdat") {
+    stop("# Two BCdat-objects required!")
   }
 
   dat1 <- methods::slot(BC_dat1, "reads")
@@ -11,11 +23,11 @@
   ind1 <- match(dat1$barcode, dat2$barcode)
 
   BCs <- list()
-  BCs$shared <- cbind(dat1[!is.na(ind1), 2:3], dat2[ind1[!is.na(ind1)], 2:3])
+  BCs$shared <- cbind(dat1[!is.na(ind1), ], dat2[ind1[!is.na(ind1)], ])
   BCs$shared <- cbind(BCs$shared, BCs$shared[, 1] - BCs$shared[, 3])
-  BCs$unique_sample1 <- dat1[is.na(ind1), 2:3]
+  BCs$unique_sample1 <- dat1[is.na(ind1), ]
   names(BCs$shared)[5] <- "reads_diff"
-  BCs$unique_sample2 <- dat2[(1:dim(dat2)[1])[-ind1[!is.na(ind1)]], 2:3]
+  BCs$unique_sample2 <- dat2[(1:dim(dat2)[1])[-ind1[!is.na(ind1)]], ]
 
   return(BCs)
 }
@@ -61,15 +73,19 @@ get_help_txt <- function(fct = NULL) {
 
 #' Predefined Barcode Backbone Sequences
 #'
-#' allows one to choose between predefined backbone sequences. Excecution of the function without any parameter value will display all
-#' available backbone sequences. The id parameter will accept the name of the backbone or the rownumber of the shown selection.
+#' allows the user to choose between predefined backbone sequences. Excecution of the function without any parameter
+#' value will display all available backbone sequences. The id parameter will accept the name of the backbone or the
+#' rownumber of the shown selection.
 #'
 #' @param id an integer or character value in order to choose a specific backbone.
 #'
 #' @return a character string.
 #' @export
-
-getBackbone <- function(id = NULL) {
+#' @examples
+#' getBackboneSelection()
+#' getBackboneSelection(2)
+#' getBackboneSelection("BC32-Venus")
+getBackboneSelection <- function(id = NULL) {
 
   BB_names <- c("BC32-GFP",
                 "BC32-Venus",
@@ -88,14 +104,14 @@ getBackbone <- function(id = NULL) {
                "CTANNCAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNGAT",
                "CTANNCACNNAGANNCTTNNCGANNCTANNGGANNCTTNNGAT")
 
-  if(is.null(id)) {
+  if (is.null(id)) {
     return(print(format(data.frame(name = BB_names, sequences = BB_seqs), justify = "left", width = 20), right = FALSE))
   } else {
-    if(is.numeric(id)) {
+    if (is.numeric(id)) {
       BB_seqs[id]
     } else {
-      if(is.character(id))
-        if(sum(BB_names == id) == 0) {
+      if (is.character(id))
+        if (sum(BB_names == id) == 0) {
             message("# No backbone with such name known.")
             return()
         } else {
@@ -151,20 +167,16 @@ getBackbone <- function(id = NULL) {
 #' @export
 #' @importFrom methods new
 
-asBCdat <- function(dat, label = "without_label", BC_backbone = "", resDir = getwd()) {
+asBCdat <- function(dat, label = "empty", BC_backbone = "none", resDir = getwd()) {
 
-  if(dim(dat)[2] < 2 | dim(dat)[2] > 3) {
-    stop("# Data obect needs two or three columns!")
-  }
-
-  if(dim(dat)[2] == 2) {
+  if (dim(dat)[2] != 2) {
+    stop("# Data object has to have two columns.")
+  } else {
+    if(!is.numeric(dat[, 1])) {
+      stop("# First column contains number of read counts therefore has to be of type numeric.")
+    }
     index <- order(as.numeric(dat[, 1]), decreasing = TRUE)
-    dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(dat[index, 1]), barcode = as.character(dat[index, 2]))
-  }
-
-  if(dim(dat)[2] == 3) {
-    index <- order(as.numeric(dat[, 2]), decreasing = TRUE)
-    dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(dat[index, 2]), barcode = as.character(dat[index, 3]))
+    dat <- data.frame(read_count = as.numeric(dat[index, 1]), barcode = as.character(dat[index, 2]))
   }
 
   return(methods::new(Class = "BCdat", reads = dat, results_dir = resDir,
@@ -181,7 +193,7 @@ asBCdat <- function(dat, label = "without_label", BC_backbone = "", resDir = get
 
 .hex2rgbColor <- function(colrs) {
 
-  if(is.vector(colrs)) {
+  if (is.vector(colrs)) {
     unlist(lapply(colrs, function(col) {
       tmp <- c(strtoi(substr(col, 2, 3), 16),
                strtoi(substr(col, 4, 5), 16),
@@ -209,17 +221,17 @@ asBCdat <- function(dat, label = "without_label", BC_backbone = "", resDir = get
 #' @export
 #' @importFrom methods new
 
-readBCdat <- function(path = "./", label = "", BC_backbone = "", file_name, s = ";") {
+readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 
   path <- .testDirIdentifier(path)
 
   dat <- utils::read.table(paste(path, file_name, sep = ""), header = TRUE, sep = s)
-  dat <- data.frame(pos = 1:dim(dat)[1], read_count = as.numeric(dat$read_count), barcode = as.character(dat$barcode))
+  dat <- data.frame(read_count = as.numeric(dat$read_count), barcode = as.character(dat$barcode))
 
-  if(label == "") {
+  if (label == "") {
     label <- unlist(strsplit(file_name, split = "[.]"))[1]
   }
-  if(path == "./") {
+  if (path == "./") {
     path <- getwd()
   }
 
@@ -239,7 +251,7 @@ readBCdat <- function(path = "./", label = "", BC_backbone = "", file_name, s = 
 
 .getDiagonalIndex <- function(n) {
 
-  index <- matrix(TRUE, nrow = n, ncol = n)
+  #index <- matrix(TRUE, nrow = n, ncol = n)
   return(
     matrix(
         unlist(
@@ -274,9 +286,13 @@ readBCdat <- function(path = "./", label = "", BC_backbone = "", file_name, s = 
 
 .testDirIdentifier <- function(s) {
 
+  if (!is.character(s)) {
+    stop("Directory paths have to be character strings.")
+  }
+
   dir_sep <- ifelse(.Platform$OS.type == "unix", "/", "\\")
   tmp <- unlist(strsplit(s, split = ""))
-  if(tmp[length(tmp)] != dir_sep) {
+  if (tmp[length(tmp)] != dir_sep) {
     s <- paste(s, dir_sep, collapse = "", sep = "")
   }
   return(s)
@@ -293,9 +309,9 @@ readBCdat <- function(path = "./", label = "", BC_backbone = "", file_name, s = 
 
   seq_length <- NULL
   counter <- 1
-  for(i in 1:(length(wobble_pos)-1)) {
-    if(wobble_pos[i+1]-wobble_pos[i] == 1) {
-              counter <- counter +1
+  for (i in 1:(length(wobble_pos) - 1)) {
+    if (wobble_pos[i + 1] - wobble_pos[i] == 1) {
+              counter <- counter + 1
     } else {
               seq_length <- c(seq_length, counter)
               counter <- 1
@@ -305,9 +321,9 @@ readBCdat <- function(path = "./", label = "", BC_backbone = "", file_name, s = 
 
   awk_cmd <- "| awk '{print "
   wobble_pos_tmp <- wobble_pos
-  for(i in 1:length(seq_length)) {
+  for (i in 1:length(seq_length)) {
     awk_cmd <- paste(awk_cmd, "substr($0, ", wobble_pos_tmp[1], ", ", seq_length[i], ")", sep="")
-    if(i < length(seq_length)) {
+    if (i < length(seq_length)) {
         wobble_pos_tmp <- wobble_pos_tmp[-(1:seq_length[i])]
     }
   }
@@ -331,10 +347,10 @@ readBCdat <- function(path = "./", label = "", BC_backbone = "", file_name, s = 
   results <- list()
   results[[1]] <- bc_backbone
 
-  for(i in 1:length(bc_backbone)) {
-    if(bc_backbone[i] != ".") {
+  for (i in 1:length(bc_backbone)) {
+    if (bc_backbone[i] != ".") {
       tmp <- nucs[-which(nucs == bc_backbone[i])]
-      for(k in 1:3) {
+      for (k in 1:3) {
         results[[counter]] <- bc_backbone
         results[[counter]][i] <- tmp[k]
         counter <- counter + 1
@@ -377,27 +393,33 @@ readBCdat <- function(path = "./", label = "", BC_backbone = "", file_name, s = 
 #' @description Generates a collection of colors for a list of barcodes based on their identified minimum hamming distances.
 #'
 #' @param minHD a numeric vector of all the minimum hamming distances.
-#' @param type a character string. Possible Values are "rainbow", "heat.colors", "topo.colors" (see package "grDevices").
+#' @param type a character string. Possible Values are "rainbow", "heat.colors", "topo.colors", "greens", "wild".
 #' @param alpha a numeric value between 0 and 1, modifies colour transparency.
 
 .generateColors <- function(minHD, type = "rainbow", alpha = 1) {
 
   BC_dist <- sort(unique(minHD))
 
-  if(type == "rainbow") {
+  if (type == "rainbow") {
     color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(11, "Spectral"), alpha = alpha)(length(unique(minHD)))
-  }
-  if(type == "heat") {
-    color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "YlOrRd"), alpha = alpha)(length(unique(minHD)))
-  }
-  if(type == "topo.colors") {
-    color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(11, "BrBG"), alpha = alpha)(length(unique(minHD)))
-  }
-  if(type == "greens") {
-    color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(11, "Greens"), alpha = alpha)(length(unique(minHD)))
-  }
-  if(type == "wild") {
-    color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"), alpha = alpha)(length(unique(minHD)))
+  } else {
+    if (type == "heat") {
+      color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "YlOrRd"), alpha = alpha)(length(unique(minHD)))
+    } else {
+      if (type == "topo.colors") {
+        color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(11, "BrBG"), alpha = alpha)(length(unique(minHD)))
+      } else {
+        if (type == "greens") {
+          color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(11, "Greens"), alpha = alpha)(length(unique(minHD)))
+        } else {
+          if (type == "wild") {
+            color_list <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"), alpha = alpha)(length(unique(minHD)))
+          } else {
+            warning("Unknown color type chosen, therefore the default value will be used. Possible Values are 'rainbow', 'heat.colors', 'topo.colors'")
+          }
+        }
+      }
+    }
   }
 
   dist_col <- unlist(lapply(minHD, function(x) {
@@ -422,12 +444,12 @@ readBCdat <- function(path = "./", label = "", BC_backbone = "", file_name, s = 
   # }
 
   tmp <- unique(unlist(strsplit(as.character(seq_dat), split = "")))
-  if(sum(tmp %in% c("A", "C", "T", "G", "N")) != length(tmp)) {
+  if (sum(tmp %in% c("A", "C", "T", "G", "N")) != length(tmp)) {
     stop("# only the letter 'A', 'T', 'C', 'G' and 'N' are allow!")
   }
 
   word_length <- unique(nchar(as.character(seq_dat)))
-  if(length(word_length) == 1) {
+  if (length(word_length) == 1) {
       .revComp_EqLength(seq_dat, word_length)
   } else {
       .revComp_UneqLength(seq_dat)

@@ -4,8 +4,7 @@
 \alias{asBCdat}
 \title{Data Type Conversion}
 \usage{
-asBCdat(dat, label = "without_label", BC_backbone = "",
-  resDir = getwd())
+asBCdat(dat, label = "empty", BC_backbone = "none", resDir = getwd())
 }
 \arguments{
 \item{dat}{a data.frame object with two columns containing read counts and barcode sequences.}

@@ -16,7 +16,7 @@
 BC_dat
 }
 \description{
-A dataset containing an example BCdat object which consists of 301 barcode sequences and with no error correction yet.
+A dataset containing an example BCdat object which consists of 98 barcode sequences and with no error correction yet.
 }
 \details{
 BC_dat:

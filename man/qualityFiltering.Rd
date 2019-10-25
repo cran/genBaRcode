@@ -23,6 +23,7 @@ Excludes all sequences of a given fastq file below a certain quality value.
 
 \dontrun{
 source_dir <- system.file("extdata", package = "genBaRcode")
-qualityFiltering(file_name = "test_data.fastq", source_dir, results_dir = getwd(), min_score = 30)
+qualityFiltering(file_name = "test_data.fastq.gz", source_dir,
+results_dir = getwd(), min_score = 30)
 }
 }

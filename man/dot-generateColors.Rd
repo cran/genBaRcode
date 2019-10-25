@@ -9,7 +9,7 @@
 \arguments{
 \item{minHD}{a numeric vector of all the minimum hamming distances.}
 
-\item{type}{a character string. Possible Values are "rainbow", "heat.colors", "topo.colors" (see package "grDevices").}
+\item{type}{a character string. Possible Values are "rainbow", "heat.colors", "topo.colors", "greens", "wild".}
 
 \item{alpha}{a numeric value between 0 and 1, modifies colour transparency.}
 }

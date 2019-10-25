@@ -6,7 +6,8 @@
 \usage{
 extractBarcodes(dat, label, results_dir = "./", mismatch = 0,
   indels = FALSE, bc_backbone, full_output = FALSE, cpus = 1,
-  strategy = "sequential", bc_extraction, dist_method = "hamming")
+  strategy = "sequential", wobble_extraction = TRUE,
+  dist_measure = "hamming")
 }
 \arguments{
 \item{dat}{a ShortReadQ object.}
@@ -27,9 +28,9 @@ extractBarcodes(dat, label, results_dir = "./", mismatch = 0,
 
 \item{strategy}{since the future package is used for parallelisation a strategy has to be stated, the default is "sequential"  (cpus = 1) and "multiprocess" (cpus > 1). For further information please read future::plan() R-Documentation.}
 
-\item{bc_extraction}{a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.}
+\item{wobble_extraction}{a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.}
 
-\item{dist_method}{a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
+\item{dist_measure}{a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
 Available distance methods are Optimal string aligment ("osa"), Levenshtein ("lv"), Damerau-Levenshtein ("dl"), Hamming ("hamming"), Longest common substring ("lcs"), q-gram ("qgram"), cosine ("cosine"), Jaccard ("jaccard"), Jaro-Winkler ("jw"),
 distance based on soundex encoding ("soundex"). For more detailed information see stringdist function of the stringdist-package for more information)}
 }
@@ -45,7 +46,7 @@ Extracts barcodes according to the given barcode design from a fastq file.
 
 bc_backbone <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
 source_dir <- system.file("extdata", package = "genBaRcode")
-dat <- ShortRead::readFastq(dirPath = source_dir, pattern = "test_data.fastq")
+dat <- ShortRead::readFastq(dirPath = source_dir, pattern = "test_data.fastq.gz")
 
 extractBarcodes(dat, label = "test", results_dir = getwd(), mismatch = 0,
 indels = FALSE, bc_backbone)

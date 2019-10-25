@@ -38,3 +38,7 @@ Corrects a list of equally long (barcode) sequences. Based on calculated hamming
 as a measure of similarity, highly similar sequences are clustered together and the cluster label will
 be the respective sequence with the highest read count.
 }
+\examples{
+data(BC_dat)
+BC_dat_EC <- errorCorrection(BC_dat, maxDist = 8, save_it = FALSE, m = "hamming")
+}

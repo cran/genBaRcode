@@ -4,20 +4,29 @@
 \alias{plotReadFrequencies}
 \title{Plotting a Barplot}
 \usage{
-plotReadFrequencies(BC_dat, b = 30, show_it = FALSE, log = FALSE)
+plotReadFrequencies(BC_dat, b = 30, bw = NULL, show_it = FALSE,
+  log = FALSE, dens = FALSE)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}
 
-\item{b}{an integer value, defining the number of bins.}
+\item{b}{an integer value, defining the number of bins. Overridden by bw. Defaults to 30. (see `?ggplot2::geom_histogram`)}
+
+\item{bw}{an integer value, defining the width of the bins.}
 
 \item{show_it}{a logical vaue. If TRUE, the respective values are printed on the console?}
 
 \item{log}{a logical vaue. If TRUE, the y-axis will be on a log scale.}
+
+\item{dens}{a logical vaue. If TRUE, the density of the read frequencies will be plotted.}
 }
 \value{
 ggplot2 object
 }
 \description{
 Generates a barplot visualising the abundances of unique read count frequencies.
+}
+\examples{
+data(BC_dat)
+plotReadFrequencies <- function(BC_dat, b = 10, show_it = TRUE)
 }

@@ -1,0 +1,145 @@
+---
+title: "Introduction to the genBaRcode GUI"
+output: pdf_document
+vignette: >
+  %\VignetteIndexEntry{Introduction to the genBaRcode GUI}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+
+  knitr::opts_chunk$set(
+    dpi = 60,
+    fig.retina = 1,
+    collapse = FALSE,
+    comment = "#>",
+    echo = FALSE
+  )
+
+  library(genBaRcode)
+
+```
+
+There is also a shiny-app included within the package, allowing you to use all main functionality of the package without typing any line of code at all. Or if you are well capable of programming you can also use it as a convenient method to learn about the possibilities of the package. There is an app-internal help and there is also an option to inspect the source code necessary to redo all in-app done analyses.
+You can start the app with the `genBaRcode_app()` command and if you already have a data file which you are dying to analyze you just need to provide the path to the directory (`dat_dir`) of this particular file and you can chose it from within the app. If you have none and no path provided, the package`s internal example file will be available for exemplary analysis.\newline
+
+```{r eval=FALSE, echo = TRUE}
+
+  # start Shiny app with the package internal test data file  
+  genBaRcode_app()
+
+  # start Shiny app with access to a predefined directory
+  genBaRcode_app(dat_dir = "/path/to/my/data/")
+  
+```
+
+After starting the app, the user has to provide basic informations like file type, file name, backbone structure, etc. By clicking on the button labeled with a question mark, the app internal help will be revealed (red circle).\newline
+
+```{r, out.width = "100%", fig.align='center'}
+
+  knitr::include_graphics("images/app0.png")
+  #knitr::include_graphics("images/app2.png")
+  
+```
+
+
+
+\pagebreak
+If no user specific input file containing folder was specified, the app will automatically make the example data file available which is included within the package. The following parameter choices would be appropriate.
+
+```{r, out.width = "25%"}
+
+  knitr::include_graphics("images/app3.png")
+
+```
+
+After starting the analysis by clicking the go button, a progress-bar will appear, unsurprisingly indicating the progress made so far. Then a dropdown menu with a variety of different plot types to choose from, an empty plot area and a table containing the most basic meta data will be visible.
+
+```{r, out.width = "80%"}
+
+  knitr::include_graphics("images/app4.png")
+  
+```
+
+\pagebreak
+After choosing a particular plot, the plot will be created and can instantaneously be modified. You can hover over certain parts of the plot to reveal additional informations and modify the displayed data, e.g. displaying the raw or error corrected data or change the scaling of axes.\newline
+
+```{r, out.width = "95%"}
+
+  knitr::include_graphics("images/app5.png")
+
+```
+
+\hspace{7cm}
+
+```{r, out.width = "95%"}
+  knitr::include_graphics("images/app5-2.png")
+```
+
+\hspace{7cm}
+  
+```{r, out.width = "95%"}
+
+  knitr::include_graphics("images/app5-3.png")
+  
+```
+
+\pagebreak
+Additionally, since the [`ggplotly`](https://www.rdocumentation.org/packages/plotly/versions/4.9.0/topics/ggplotly) package was used there are a lot of further options available like zooming in and out, saving the entire plot as a *png* file or to box-select certain parts of the plot.\newline
+
+```{r, out.width = "95%"}
+
+  knitr::include_graphics("images/app6.png")
+
+```
+
+\hspace{7cm}
+
+```{r, out.width = "95%"}
+
+  knitr::include_graphics("images/app6-2.png")
+  
+```
+
+\pagebreak
+If there are questions regarding the already chosen plot type, there is also a button labeled with a question mark available, explaining all the necessary details regarding the specific plot.\newline
+
+```{r, out.width = "95%"}
+
+  knitr::include_graphics("images/app7.png")
+
+```
+
+\hspace{7cm}
+
+```{r, out.width = "95%"}
+
+  knitr::include_graphics("images/app7-2.png")
+
+```
+
+\pagebreak
+The included tables on the lower right side contain the meta-data, the barcode sequences, their read-counts and the raw source code necessary to redo all of the analysis steps done within the app directly within the R console. Here you can see the exemplary barcode list before the error correction and the corresponding source code.
+
+```{r, out.width = "73%"}
+
+  knitr::include_graphics("images/app8.png")
+
+```
+
+
+
+```{r, out.width = "73%"}
+
+  knitr::include_graphics("images/app8-2.png")
+  
+```
+
+Finally, if you decide to start another analysis or to exit the app entirely, there are the appropriate buttons available.\newline
+
+```{r, out.width = "95%"}
+
+  knitr::include_graphics("images/app9.png")
+
+```
