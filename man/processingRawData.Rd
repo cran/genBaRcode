@@ -4,12 +4,25 @@
 \alias{processingRawData}
 \title{Data processing}
 \usage{
-processingRawData(file_name, source_dir, results_dir = NULL,
-  mismatch = 0, indels = FALSE, label = "", bc_backbone,
-  bc_backbone_label = NULL, min_score = 30, min_reads = 2,
-  save_it = TRUE, seqLogo = FALSE, cpus = 1,
-  strategy = "sequential", full_output = FALSE,
-  wobble_extraction = TRUE, dist_measure = "hamming")
+processingRawData(
+  file_name,
+  source_dir,
+  results_dir = NULL,
+  mismatch = 0,
+  indels = FALSE,
+  label = "",
+  bc_backbone,
+  bc_backbone_label = NULL,
+  min_score = 30,
+  min_reads = 2,
+  save_it = TRUE,
+  seqLogo = FALSE,
+  cpus = 1,
+  strategy = "sequential",
+  full_output = FALSE,
+  wobble_extraction = TRUE,
+  dist_measure = "hamming"
+)
 }
 \arguments{
 \item{file_name}{a character string or a character vector, containing the file name(s).}

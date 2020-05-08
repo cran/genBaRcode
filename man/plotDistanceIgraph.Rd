@@ -4,10 +4,19 @@
 \alias{plotDistanceIgraph}
 \title{Plotting a Distance Network}
 \usage{
-plotDistanceIgraph(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL,
-  threeD = FALSE, complete = FALSE, col_type = "rainbow",
-  leg_pos = "left", inset = -0.125, title = "Distance",
-  m = "hamming")
+plotDistanceIgraph(
+  BC_dat,
+  minDist = 1,
+  loga = TRUE,
+  ori_BCs = NULL,
+  threeD = FALSE,
+  complete = FALSE,
+  col_type = "rainbow",
+  leg_pos = "left",
+  inset = -0.125,
+  title = "Distance",
+  m = "hamming"
+)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}

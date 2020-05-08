@@ -20,6 +20,6 @@ Replacing the Barcode Backbone slot of a BCdat objects.
 \examples{
 data(BC_dat)
 new_backbone <- getBackboneSelection("BC32-T-Sapphire")
-BC_dat_alt <- setBackbone(BC_dat, new_backbone)
+BC_dat_new <- setBackbone(BC_dat, new_backbone)
 
 }

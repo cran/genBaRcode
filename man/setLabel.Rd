@@ -20,6 +20,6 @@ Replacing the Label slot of a BCdat objects.
 \examples{
 data(BC_dat)
 new_label <- "foo-bar"
-BC_dat_alt <- setLabel(BC_dat, new_label)
+BC_dat_new <- setLabel(BC_dat, new_label)
 
 }

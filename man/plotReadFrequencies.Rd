@@ -4,8 +4,14 @@
 \alias{plotReadFrequencies}
 \title{Plotting a Barplot}
 \usage{
-plotReadFrequencies(BC_dat, b = 30, bw = NULL, show_it = FALSE,
-  log = FALSE, dens = FALSE)
+plotReadFrequencies(
+  BC_dat,
+  b = 30,
+  bw = NULL,
+  show_it = FALSE,
+  log = FALSE,
+  dens = FALSE
+)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}

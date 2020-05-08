@@ -4,9 +4,18 @@
 \alias{plotDistanceVisNetwork_EC}
 \title{Plotting a Distance Network (error correction)}
 \usage{
-plotDistanceVisNetwork_EC(BC_dat, BC_dat_EC, minDist = 1, loga = TRUE,
-  equal_node_sizes = TRUE, BC_threshold = NULL, ori_BCs = NULL,
-  complete = FALSE, col_type = "rainbow", m = "hamming")
+plotDistanceVisNetwork_EC(
+  BC_dat,
+  BC_dat_EC,
+  minDist = 1,
+  loga = TRUE,
+  equal_node_sizes = TRUE,
+  BC_threshold = NULL,
+  ori_BCs = NULL,
+  complete = FALSE,
+  col_type = "rainbow",
+  m = "hamming"
+)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}

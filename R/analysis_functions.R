@@ -8,7 +8,6 @@
 #' @return a data.frame containing every identified barcode and its read count per time point/measurement.
 #'
 #' @export
-
 generateTimeSeriesData <- function(BC_dat_list) {
 
   if (length(BC_dat_list) < 2) {

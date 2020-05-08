@@ -25,6 +25,6 @@ bcs <- unlist(lapply(1:20, function(x) {
            c("A", "C", "T", "G") \%>\% sample(replace = TRUE, size = 32) \%>\% paste0(collapse = "")
        }))
 new_read_count_table <- data.frame(read_count = sample(1:1000, size = 20), barcode = bcs)
-BC_dat_alt <- setReads(BC_dat, new_read_count_table)
+BC_dat_new <- setReads(BC_dat, new_read_count_table)
 
 }

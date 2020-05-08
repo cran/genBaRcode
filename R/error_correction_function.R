@@ -80,9 +80,6 @@ errorCorrection <- function(BC_dat, maxDist, save_it = FALSE, cpus = 1, strategy
   if(is.list(BC_dat) & cpus > 1) {
       return(errorCorrection_multiple(BC_dat, cpus = cpus, strategy = strategy, func = ecf, params = params))
   } else {
-      # if(cpus > 1) {
-      #   warning("# parallelization only possible for mutliple BCdat objects.")
-      # }
   # if processingRawData did run with multiple input NGS files and at the same time with multiple backbones the resulting object will be
   # a list of lists hence the two is.list if-loops
       if(is.list(BC_dat)) {
@@ -130,7 +127,6 @@ errorCorrection_multiple <- function(BC_dat, cpus, strategy, func, params) {
 
   return(tmp)
 }
-
 
 errorCorrection_multiple_old <- function(BC_dat, maxDist, save_it = FALSE, cpus = 1, strategy, m = "hamming", EC_analysis = FALSE, func, params) {
 
@@ -212,7 +208,7 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
         candDists <- stringdist::stringdist(seqs[merging_barcode], seqs[merging_barcode + candIndices], method = m, nthread = nt)
         distances[min(candDists)] <- func(distances[min(candDists)], func(candIndices[candDists == min(candDists)], na.rm = TRUE), na.rm = TRUE)
       }
-      if (d != 0 && !is.null(distances[d])) {
+      if (d != 0 && !is.na(distances[d])) {
         index <- distances[d]
         break
       }
@@ -265,7 +261,7 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
     merging_barcode <- merging_barcode + 1
   }
 
-  dat <- data.frame(read_count = rev(bcs[keep]), barcode = rev(seqs[keep]))
+  dat <- data.frame(read_count = rev(bcs[keep]), barcode = rev(seqs[keep]), stringsAsFactors = TRUE)
   if (save_it) {
     utils::write.table(dat, paste(methods::slot(BC_dat, "results_dir"), methods::slot(BC_dat, "label"), "_BCs.csv", sep = ""), sep = ";", row.names = FALSE, col.names = TRUE, quote = FALSE)
   }
@@ -277,13 +273,13 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
       to_part <- to_part[index]
     }
 
-    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
-                    data.frame(from = rev(from_part), to = rev(to_part)))
+    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2]), stringsAsFactors = TRUE),
+                    data.frame(from = rev(from_part), to = rev(to_part), stringsAsFactors = TRUE))
 
     vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])), stringsAsFactors = TRUE)
 
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -295,11 +291,10 @@ errorCorrection_single_variation <- function(BC_dat, maxDist, save_it = FALSE, m
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     return(BC_dat)
   }
 }
-
 
 errorCorrection_single_biggest <- function(BC_dat, maxDist, save_it = FALSE, m = "hamming", EC_analysis = FALSE, only_EC_BCs = TRUE, nt) {
 
@@ -363,13 +358,13 @@ errorCorrection_single_biggest <- function(BC_dat, maxDist, save_it = FALSE, m =
         to_part <- to_part[index]
     }
 
-    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
-                    data.frame(from = rev(from_part), to = rev(to_part)))
+    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2]), stringsAsFactors = TRUE),
+                    data.frame(from = rev(from_part), to = rev(to_part), stringsAsFactors = TRUE))
 
     vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])), stringsAsFactors = TRUE)
 
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -381,7 +376,7 @@ errorCorrection_single_biggest <- function(BC_dat, maxDist, save_it = FALSE, m =
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     return(BC_dat)
   }
   return(BC_dat)
@@ -449,13 +444,13 @@ errorCorrection_single <- function(BC_dat, maxDist, save_it = FALSE, m = "hammin
       to_part <- to_part[index]
     }
 
-    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
-                    data.frame(from = rev(from_part), to = rev(to_part)))
+    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2]), stringsAsFactors = TRUE),
+                    data.frame(from = rev(from_part), to = rev(to_part), stringsAsFactors = TRUE))
 
     vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])), stringsAsFactors = TRUE)
 
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -467,7 +462,7 @@ errorCorrection_single <- function(BC_dat, maxDist, save_it = FALSE, m = "hammin
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     return(BC_dat)
   }
   return(BC_dat)
@@ -527,7 +522,6 @@ errorCorrection_single_connections <- function(BC_dat, maxDist, save_it = FALSE,
 
       dat[index + merging_barcode, 1] <- dat[index + merging_barcode, 1] + dat[merging_barcode, 1]
       dat <- dat[-merging_barcode, ]
-      #dat <- dat[order(dat[, 1]), ]
       stop <- dim(dat)[1]
     } else {
       merging_barcode <- merging_barcode + 1
@@ -547,13 +541,13 @@ errorCorrection_single_connections <- function(BC_dat, maxDist, save_it = FALSE,
       to_part <- to_part[index]
     }
 
-    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
-                    data.frame(from = rev(from_part), to = rev(to_part)))
+    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2]), stringsAsFactors = TRUE),
+                    data.frame(from = rev(from_part), to = rev(to_part), stringsAsFactors = TRUE))
 
     vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])), stringsAsFactors = TRUE)
 
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -565,7 +559,7 @@ errorCorrection_single_connections <- function(BC_dat, maxDist, save_it = FALSE,
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     return(BC_dat)
   }
   return(BC_dat)
@@ -629,13 +623,13 @@ errorCorrection_single_clustering_absolute <- function(BC_dat, maxDist, save_it 
       to_part <- to_part[index]
     }
 
-    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
-                    data.frame(from = rev(from_part), to = rev(to_part)))
+    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2]), stringsAsFactors = TRUE),
+                    data.frame(from = rev(from_part), to = rev(to_part), stringsAsFactors = TRUE))
 
     vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])), stringsAsFactors = TRUE)
 
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -647,7 +641,7 @@ errorCorrection_single_clustering_absolute <- function(BC_dat, maxDist, save_it 
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     return(BC_dat)
   }
   return(BC_dat)
@@ -720,13 +714,13 @@ errorCorrection_single_clustering_stepwise <- function(BC_dat, maxDist, save_it 
       to_part <- to_part[index]
     }
 
-    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2])),
-                    data.frame(from = rev(from_part), to = rev(to_part)))
+    fromTo <- rbind(data.frame(from = "origin", to = rev(dat[, 2]), stringsAsFactors = TRUE),
+                    data.frame(from = rev(from_part), to = rev(to_part), stringsAsFactors = TRUE))
 
     vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])), stringsAsFactors = TRUE)
 
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -738,7 +732,7 @@ errorCorrection_single_clustering_stepwise <- function(BC_dat, maxDist, save_it 
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     return(BC_dat)
   }
   return(BC_dat)
@@ -785,7 +779,7 @@ errorCorrection_single_graphComp <- function(BC_dat, maxDist, save_it = FALSE, m
     }
   }
 
-  dat <- data.frame(read_count = reads, barcode = seqs)
+  dat <- data.frame(read_count = reads, barcode = seqs, stringsAsFactors = TRUE)
   dat <- dat[order(dat[, 1], decreasing = TRUE), ]
   if(save_it) {
     utils::write.table(dat, paste(methods::slot(BC_dat, "results_dir"), methods::slot(BC_dat, "label"), "_BCs.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
@@ -799,13 +793,13 @@ errorCorrection_single_graphComp <- function(BC_dat, maxDist, save_it = FALSE, m
       to_part <- to_part[index]
     }
 
-    fromTo <- rbind(data.frame(from = "origin", to = dat[, 2]),
-                    data.frame(from = rev(from_part), to = to_part))
+    fromTo <- rbind(data.frame(from = "origin", to = dat[, 2], stringsAsFactors = TRUE),
+                    data.frame(from = rev(from_part), to = to_part, stringsAsFactors = TRUE))
 
     vertices <- data.frame(barcodes = c("origin", as.character(methods::slot(BC_dat, "reads")[, 2])),
-                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])))
+                           read_counts = c(1, as.numeric(methods::slot(BC_dat, "reads")[, 1])), stringsAsFactors = TRUE)
 
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     final <- list(BC_dat = BC_dat,
                   edges = fromTo,
                   vertices = vertices,
@@ -817,7 +811,7 @@ errorCorrection_single_graphComp <- function(BC_dat, maxDist, save_it = FALSE, m
     }
     return(final)
   } else {
-    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2])
+    methods::slot(BC_dat, "reads") <- data.frame(read_count = dat[, 1], barcode = dat[, 2], stringsAsFactors = TRUE)
     return(BC_dat)
   }
   return(BC_dat)

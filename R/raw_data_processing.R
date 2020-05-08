@@ -85,7 +85,6 @@ processingRawData <- function(file_name, source_dir, results_dir = NULL, mismatc
       stop("# file_name needs to be a character string (processingRawData)")
     }
   }
-
   return(dat)
 }
 
@@ -99,10 +98,14 @@ processingRawData_single <- function(file_name, source_dir, results_dir, mismatc
   if (is.na(ending)) {
     stop(paste0("# Unknown file format (", file_name, "), so far only fastq and fasta files are supported."))
   }
-  if (min_score > 0 & ending == "fastq" | ending == "FASTQ" | ending == "fq") {
-    dat <- qualityFiltering(file_name, source_dir, min_score)
-    if (length(dat) == 0) {
-      warning("# There are no sequences after quality filtering!")
+  if (ending == "fastq" | ending == "FASTQ" | ending == "fq") {
+    if (min_score > 0) {
+      dat <- qualityFiltering(file_name, source_dir, min_score)
+      if (length(dat) == 0) {
+        warning("# There are no sequences left after quality filtering!")
+      }
+    } else {
+      dat <- ShortRead::readFastq(dirPath = source_dir, pattern = file_name)
     }
   } else {
     if (ending == "fasta") {
@@ -125,7 +128,7 @@ processingRawData_single <- function(file_name, source_dir, results_dir, mismatc
                     height = l / 16)
   }
 
-    dat <- extractBarcodes(dat, label, results_dir,
+  dat <- extractBarcodes(dat, label, results_dir,
                            mismatch = mismatch, indels = indels,
                            bc_backbone, full_output, cpus, strategy, wobble_extraction, dist_measure)
 
@@ -194,7 +197,6 @@ processingRawData_multiple <- function(file_name, source_dir, results_dir, misma
   return(tmp)
 }
 
-
 #' Data Object Preparation
 #'
 #' generates BCdat object after barcode backbone identification.
@@ -208,7 +210,6 @@ processingRawData_multiple <- function(file_name, source_dir, results_dir, misma
 #'
 #' @return a BCdat object.
 #' @importFrom methods new
-#'
 prepareDatObject <- function(dat, results_dir, label, bc_backbone, min_reads, save_it) {
 
   if (dim(dat)[1] == 0) {
@@ -217,17 +218,12 @@ prepareDatObject <- function(dat, results_dir, label, bc_backbone, min_reads, sa
                         BC_backbone = bc_backbone))
   }
 
-  dat <- dat[dat[, 2] > min_reads, ]
+  dat <- dat[as.logical(dat[, 2] > min_reads), ]
   if (dim(dat)[1] != 0) {
-    dat <- data.frame(read_count = as.numeric(unlist(dat[, 2])), barcode = as.character(unlist(dat[, 1])))
+    dat <- data.frame(read_count = as.numeric(unlist(dat[, 2])), barcode = as.character(unlist(dat[, 1])), stringsAsFactors = TRUE)
     if (save_it) {
-      # if (sum(dim(dat)) > 2) {
-      #   utils::write.table(dat[, 2:3], paste(results_dir, label, "_BCs.csv", sep=""), sep=";", row.names = FALSE, col.names = TRUE, quote = FALSE)
-      # } else {
-        utils::write.table(dat, paste(results_dir, label, "_BCs.csv", sep=""), sep = ";", row.names = FALSE, col.names = TRUE, quote = FALSE)
-      # }
+         utils::write.table(dat, paste(results_dir, label, "_BCs.csv", sep=""), sep = ";", row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
-
     return(methods::new(Class = "BCdat", reads = dat, results_dir = results_dir,
                         label = label,
                         BC_backbone = bc_backbone))
@@ -311,7 +307,7 @@ extractBarcodes <- function(dat, label, results_dir = "./", mismatch = 0, indels
   if (length(bc_backbone) == 1) {
     if (bc_backbone == "none") {
       tmp <- as.character(ShortRead::sread(dat))
-      tmp <- data.frame(table(tmp))
+      tmp <- data.frame(table(tmp), stringsAsFactors = TRUE)
       tmp <- asBCdat(dat = tmp[, c(2, 1)], label = label, BC_backbone = "none", resDir = results_dir)
 
       res <- list()
@@ -350,7 +346,7 @@ extractBarcodes <- function(dat, label, results_dir = "./", mismatch = 0, indels
     res <- vector(mode = "list", length = length(tmp[[1]]))
     for (i in 1:length(tmp[[1]])) {
       res_tmp <- sort(table(tmp[[1]][[i]]), decreasing = TRUE)
-      res[[i]] <- data.frame(seqs = names(res_tmp), n = as.numeric(res_tmp))
+      res[[i]] <- data.frame(seqs = names(res_tmp), n = as.numeric(res_tmp), stringsAsFactors = TRUE)
     }
   }
   return(res)
@@ -391,7 +387,7 @@ BC_matching <- function(dat, label, results_dir, mismatch, indels, bc_backbone, 
                                              max.mismatch = mismatch, min.mismatch = 1,
                                              with.indels = indels, fixed = FALSE,
                                              algorithm = "auto")
-    match_matrix <- data.frame(match_index)
+    match_matrix <- data.frame(match_index, stringsAsFactors = TRUE)
     if (sum(duplicated(match_matrix$group)) != 0) {
       warning("# Duplicated backbone matches (mismatch > 0)")
       if (full_output) {
@@ -438,7 +434,6 @@ fixBorderlineBCs <- function(BCs, mismatch, match_matrix, read_length) {
   if (length(unique(nchar(BCs))) > 1) {
     warning(paste0("# different barcode lengths (", paste(unique(nchar(BCs)), collapse = "-"), " nucs, function: fixBorderBCs)"))
   }
-
   return(BCs)
 }
 
@@ -454,14 +449,13 @@ extractWobble <- function(i, tmp, bc_backbone, indels, label) {
         paste0(x[wobble_pos], collapse = "")
       }, wobble_pos
       )
-      dat <- data.frame(unlist(tmp))
+      dat <- data.frame(unlist(tmp), stringsAsFactors = TRUE)
 
     } else {
-      dat <- as.data.frame(dat)
+      dat <- as.data.frame(dat, stringsAsFactors = TRUE)
     }
     return(dplyr::count(dat, dat[, 1], sort = TRUE))
   } else {
-    #warning(paste("# ", label, ": no backbone patterns detectable!", sep =""))
     return(data.frame())
   }
 }

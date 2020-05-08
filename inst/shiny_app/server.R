@@ -632,31 +632,6 @@ shinyServer(
       bcp <- "not defined"
       cpus <- floor(future::availableCores()/2)
 
-      # if(input$backbone == "BC32-GFP") {
-      #   bcp <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
-      # }
-      # if(input$backbone == "BC32-Venus") {
-      #   bcp <- "CGANNAGANNCTTNNCGANNCTANNGGANNCTTNNCGANNAGANNCTTNNCGANNCTANNGGANNCTTNNCGANNAGANN"
-      # }
-      # if(input$backbone == "BC32-eBFP") {
-      #   bcp <- "CTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNCTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNCTANNCAGNN"
-      # }
-      # if(input$backbone == "BC32-T-Sapphire") {
-      #   bcp <- "CAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNCAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNCAGNNATCNN"
-      # }
-      # if(input$backbone == "BC16-GFP") {
-      #   bcp <- "AGATCNNTAGNNTCCNNAAGNNTCGNNAAGNNTCGNNAGTNNTAGAT"
-      # }
-      # if(input$backbone == "BC16-Venus") {
-      #   bcp <- "CTANNCTANNCAGNNCTTNNCGANNCTANNCTTNNGGANNGAT"
-      # }
-      # if(input$backbone == "BC16-mCherry") {
-      #   bcp <- "CTANNCAGNNATCNNCTTNNCGANNGGANNCTANNCTTNNGAT"
-      # }
-      # if(input$backbone == "BC16-Cerulean") {
-      #   bcp <- "CTANNCACNNAGANNCTTNNCGANNCTANNGGANNCTTNNGAT"
-      # }
-
       if (input$backbone == "none") {
         bcp <- input$backbone
       } else {

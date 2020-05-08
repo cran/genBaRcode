@@ -4,9 +4,18 @@
 \alias{errorCorrection}
 \title{Error Correction}
 \usage{
-errorCorrection(BC_dat, maxDist, save_it = FALSE, cpus = 1,
-  strategy = "sequential", m = "hamming", type = "standard",
-  only_EC_BCs = TRUE, EC_analysis = FALSE, start_small = TRUE)
+errorCorrection(
+  BC_dat,
+  maxDist,
+  save_it = FALSE,
+  cpus = 1,
+  strategy = "sequential",
+  m = "hamming",
+  type = "standard",
+  only_EC_BCs = TRUE,
+  EC_analysis = FALSE,
+  start_small = TRUE
+)
 }
 \arguments{
 \item{BC_dat}{one or a list of BCdat objects, containing the necessary sequences.}

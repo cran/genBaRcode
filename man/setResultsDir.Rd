@@ -20,6 +20,6 @@ Replacing the Results Directory slot of a BCdat objects.
 \examples{
 data(BC_dat)
 new_path <- getwd()
-BC_dat_alt <- setResultsDir(BC_dat, new_path)
+BC_dat_new <- setResultsDir(BC_dat, new_path)
 
 }

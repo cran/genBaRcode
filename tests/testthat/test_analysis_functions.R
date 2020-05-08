@@ -1,4 +1,4 @@
-library(genBaRcode)
+
 context("analysis functions")
 
 test_that("analysis functions", {

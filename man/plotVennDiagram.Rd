@@ -4,9 +4,15 @@
 \alias{plotVennDiagram}
 \title{Plotting a VennDiagram}
 \usage{
-plotVennDiagram(BC_dat, alpha_value = 0.4, colrs = NA,
-  border_color = NA, plot_title = "", legend_sort = NULL,
-  annotationSize = 5)
+plotVennDiagram(
+  BC_dat,
+  alpha_value = 0.4,
+  colrs = NA,
+  border_color = NA,
+  plot_title = "",
+  legend_sort = NULL,
+  annotationSize = 5
+)
 }
 \arguments{
 \item{BC_dat}{a list of BCdat objects.}

@@ -4,10 +4,19 @@
 \alias{extractBarcodes}
 \title{Barcode extraction}
 \usage{
-extractBarcodes(dat, label, results_dir = "./", mismatch = 0,
-  indels = FALSE, bc_backbone, full_output = FALSE, cpus = 1,
-  strategy = "sequential", wobble_extraction = TRUE,
-  dist_measure = "hamming")
+extractBarcodes(
+  dat,
+  label,
+  results_dir = "./",
+  mismatch = 0,
+  indels = FALSE,
+  bc_backbone,
+  full_output = FALSE,
+  cpus = 1,
+  strategy = "sequential",
+  wobble_extraction = TRUE,
+  dist_measure = "hamming"
+)
 }
 \arguments{
 \item{dat}{a ShortReadQ object.}

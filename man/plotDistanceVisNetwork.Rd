@@ -4,9 +4,15 @@
 \alias{plotDistanceVisNetwork}
 \title{Plotting a Distance Network}
 \usage{
-plotDistanceVisNetwork(BC_dat, minDist = 1, loga = TRUE,
-  ori_BCs = NULL, complete = FALSE, col_type = "rainbow",
-  m = "hamming")
+plotDistanceVisNetwork(
+  BC_dat,
+  minDist = 1,
+  loga = TRUE,
+  ori_BCs = NULL,
+  complete = FALSE,
+  col_type = "rainbow",
+  m = "hamming"
+)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}

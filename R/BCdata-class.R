@@ -1,6 +1,5 @@
 
 checkDir <- function(dir, errors = NULL) {
-
   if (!dir.exists(dir)) {
     errors <- c(errors, "# Unfortunatly, the specified folder does not exists.")
   } else {
@@ -13,7 +12,6 @@ checkDir <- function(dir, errors = NULL) {
 }
 
 checkReads <- function(reads, errors = NULL) {
-
   if (!is.data.frame(reads)) {
     errors <- c(errors, paste0("# Data is of type ", methods::is(reads)[1], ".  Should be a data.frame."))
   }
@@ -41,7 +39,7 @@ checkBackbone <- function(backbone, errors = NULL) {
       if (length(backbone) > 1) {
         errors <- c(errors, "# Only one backbone is supported.")
       } else {
-        elements <- strsplit(backbone, split = "") %>% unlist %>% table %>% as.data.frame()
+        elements <- strsplit(backbone, split = "") %>% unlist %>% table %>% as.data.frame(stringsAsFactors = TRUE)
         IUPAC_nucCode <- c("A", "C", "G", "T", "U", "R", "Y", "S", "W", "K", "M", "B", "D", "H", "V", "N", ".", "-")
         if (sum(!as.character(elements[, 1]) %in% IUPAC_nucCode) != 0) {
           errors <- c(errors, "# Backbones are only valid if consisting of IUPAC-nucleotide-code symbols")
@@ -53,7 +51,6 @@ checkBackbone <- function(backbone, errors = NULL) {
 }
 
 checkLabel <- function(label, errors = NULL) {
-
   if (length(label) != 1) {
     errors <- c(errors, "# Only one label needed.")
   }
@@ -64,7 +61,6 @@ checkLabel <- function(label, errors = NULL) {
 }
 
 checkBarcodeData <- function(object) {
-
   errors <- character()
   errors <- checkReads(object@reads, errors)
   errors <- checkBackbone(object@BC_backbone, errors)
@@ -90,7 +86,7 @@ BCdat <- methods::setClass("BCdat",
                                        BC_backbone = "character"
                             ),
                             prototype = list(
-                              reads = data.frame(read_count = NULL, barcode = NULL),
+                              reads = data.frame(read_count = NA_integer_, barcode = NA_character_),
                               results_dir = NA_character_,
                               label = NA_character_,
                               BC_backbone = NA_character_
@@ -138,7 +134,7 @@ setMethod("show", signature = c("BCdat"),
                            collapse = "")
                   }) %>% unlist
                   print(data.frame(read_count = object@reads[1:10, 1],
-                                   barcode = seqs), row.names = FALSE)
+                                   barcode = seqs, stringsAsFactors = TRUE), row.names = FALSE)
                 } else {
                   print(object@reads[1:10, ], row.names = FALSE)
                 }
@@ -153,7 +149,7 @@ setMethod("show", signature = c("BCdat"),
                            paste0(tmp_seq[(round(len/2)+1):length(tmp_seq)], collapse = ""), collapse = "")
                   }) %>% unlist
                   print(data.frame(read_count = object@reads[, 1],
-                                   barcode = seqs), row.names = FALSE)
+                                   barcode = seqs, stringsAsFactors = TRUE), row.names = FALSE)
                 } else {
                   print(object@reads[, ], row.names = FALSE)
                 }
@@ -168,149 +164,3 @@ setMethod("show", signature = c("BCdat"),
             cat("      ", object@label, "\n")
           }
 )
-
-
-# methods::setGeneric(
-#   name = "reads<-",
-#   def = function(object, value) {
-#     standardGeneric("reads<-")
-#   }
-# )
-#
-#   methods::setMethod(
-#     f = "reads<-",
-#     signature = "BCdat",
-#     definition = function(object, value) {
-#       errors <- checkReads(value, NULL)
-#       if (length(errors)) {
-#           object@reads <- value
-#       } else {
-#           stop(errors)
-#       }
-#     }
-#   )
-#
-# methods::setGeneric(
-#   name = "resDir",
-#   def = function(object) {
-#     standardGeneric("resDir")
-#   }
-# )
-#
-#   methods::setMethod(
-#     f = "resDir",
-#     signature = character(),
-#     definition = function(object) {
-#       return(object@results_dir)
-#     }
-#   )
-#
-#
-# methods::setGeneric(
-#   name = "resDir<-",
-#   def = function(object, value) {
-#     standardGeneric("resDir<-")
-#   }
-# )
-#
-#   methods::setMethod(
-#     f = "resDir<-",
-#     signature = "BCdat",
-#     definition = function(object, value) {
-#       errors <- checkReads(value, NULL)
-#       if (length(errors)) {
-#         object@reads <- value
-#       } else {
-#         stop(errors)
-#       }
-#       return(object)
-#     }
-#   )
-#
-#
-# methods::setGeneric(
-#   name = "fileLabel",
-#   def = function(object) {
-#     standardGeneric("fileLabel")
-#   }
-# )
-#
-# methods::setMethod(
-#   f = "fileLabel",
-#   signature = "BCdat",
-#   definition = function(object) {
-#     return(object@label)
-#   }
-# )
-#
-# methods::setGeneric(
-#   name = "fileLabel<-",
-#   def = function(object, value) {
-#     standardGeneric("fileLabel<-")
-#   }
-# )
-#
-#
-# methods::setGeneric(
-#   name = "backbone",
-#   def = function(object) {
-#     standardGeneric("backbone")
-#   }
-# )
-#
-#
-# methods::setMethod(
-#   f = "backbone",
-#   signature = "BCdat",
-#   definition = function(object) {
-#     return(object@BC_backbone)
-#   }
-# )
-#
-# methods::setGeneric(
-#   name = "backbone<-",
-#   def = function(object, value) {
-#     standardGeneric("backbone<-")
-#   }
-# )
-#
-# methods::setReplaceMethod(
-#   f = "backbone",
-#   signature = "BCdat",
-#   definition = function(object, value) {
-#     if(methods::is(value, "character")) {
-#         object@BC_backbone <- value
-#     } else {
-#         stop("# the BC_backbone slot demands a character")
-#     }
-#     return(object)
-#   }
-# )
-
-# #' @include BCdata-class.R
-# NULL
-
-# #' Title READS
-# #'
-# #' @param object asdf
-# #'
-# #' @return stuff
-# #' @export
-# #' @docType BCdat
-# #' @rdname reads-BCdat
-# methods::setGeneric("reads",
-#                     function(object) {
-#                       standardGeneric("reads")
-#                     }
-# )
-
-# #' @rdname reads-BCdat
-# #' @aliases reads,BCdat
-# #' @exportMethod
-# methods::setMethod("reads", signature(object = "BCdat"),
-#                    function(object) {
-#                      return(object@reads)
-#                    }
-# )
-
-###################

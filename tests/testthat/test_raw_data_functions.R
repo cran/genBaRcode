@@ -1,7 +1,4 @@
 
-library(genBaRcode)
-library(ShortRead)
-
 context("raw data processing")
 
 test_that("processingRawData - bc_backbone and file_name test", {
@@ -44,9 +41,7 @@ test_that("processingRawData - extractBarcodes", {
              "GTAAGTACCCCTGCTTTGCAGGCAAAGCAGTAGCTCCGAGGAGTAACACCACATCTGTCGACCCAATTTGTGACAACTCTAGGCAC") # random
   ids <- c("2MMa", "AA", "TT", "GG", "CC", "2MMb", "1MM", "random")
 
-  dat <- methods::new(Class = "ShortRead",
-                      sread = Biostrings::DNAStringSet(fastq),
-                      id = Biostrings::BStringSet(ids))
+  dat <- ShortRead::ShortRead(sread = Biostrings::DNAStringSet(fastq), id = Biostrings::BStringSet(ids))
 
   eM <- "# At the moment it is only possible to analyse the data either with no backbone at all or with one or multiple actual backbones."
   expect_error(extractBarcodes(dat = dat, label = "test", results_dir = "",
@@ -64,7 +59,7 @@ test_that("processingRawData - extractBarcodes", {
   #                              mismatch = -1, indels = FALSE,
   #                              bc_backbone = "ACN"), wM, fixed = TRUE)
 
-  res <- evaluate_promise(
+  res <- testthat::evaluate_promise(
             extractBarcodes(dat, label = "test", results_dir = "", mismatch = -1, indels = FALSE, bc_backbone = bb, wobble_extraction = FALSE)
   )
 
@@ -123,9 +118,8 @@ test_that("processingRawData - fixBorderlineBCs and extractWobble", {
 
   ids <- c("AA-1mmF", "AA", "AA-3mmB", "TT", "GG", "GG-1mmB", "GG-3mmB", "CC", "CC-2mmF", "TT-3mmF", "random")
 
-  dat <- methods::new(Class = "ShortRead",
-                      sread = Biostrings::DNAStringSet(fastq),
-                      id = Biostrings::BStringSet(ids))
+  dat <- ShortRead::ShortRead(sread = Biostrings::DNAStringSet(fastq), id = Biostrings::BStringSet(ids))
+
   tmp <- list(list(), ShortRead::sread(dat))
 
   read_length <- nchar(fastq)[1]
@@ -134,13 +128,13 @@ test_that("processingRawData - fixBorderlineBCs and extractWobble", {
   test2_res <- list()
   test2_res[[1]] <- data.frame('dat...1.' = c("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
                                               "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG", "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGN", "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"),
-                                n = c(2, rep(1, 4)))
+                                n = c(2, rep(1, 4)), stringsAsFactors = TRUE)
   test2_res[[2]] <- data.frame('dat...1.' = c("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC", "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
                                               "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGN", "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"),
-                                n = c(rep(2, 2), rep(1, 3)))
+                                n = c(rep(2, 2), rep(1, 3)), stringsAsFactors = TRUE)
   test2_res[[3]] <- data.frame('dat...1.' = c("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC", "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
                                               "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG", "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGN", "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGNN"),
-                                n = c(rep(2, 3), rep(1,3)))
+                                n = c(rep(2, 3), rep(1,3)), stringsAsFactors = TRUE)
 
   for (mm in 1:3) {
     # test fixBorderlineBCs
@@ -155,7 +149,7 @@ test_that("processingRawData - fixBorderlineBCs and extractWobble", {
 
     # test extractWobble
     res <- BC_matching(tmp, "test", results_dir = "", mismatch = mm, indels = FALSE, bc_backbone = bb, full_output = FALSE)
-    res <- data.frame(extractWobble(i = 1, tmp = res, bc_backbone = bb, indels = FALSE, label = ""))
+    res <- data.frame(extractWobble(i = 1, tmp = res, bc_backbone = bb, indels = FALSE, label = ""), stringsAsFactors = TRUE)
 
     expect_equal(res, test2_res[[mm]])
   }

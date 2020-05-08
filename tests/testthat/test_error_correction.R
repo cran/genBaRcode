@@ -1,5 +1,4 @@
 
-library(genBaRcode)
 context("errorCorrection")
 
 test_that("errorCorrection", {
@@ -24,27 +23,26 @@ test_that("errorCorrection", {
                                 "ATTAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT",
                                 "ATTAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACGCCGGGGATTT",
                                 "ATTAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACGCCGGGGATTT",
-                                "AAAAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT")
+                                "AAAAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT"), stringsAsFactors = TRUE
                     )
         )
 
-  res <- data.frame(read_count = c(51, 40, 20, 12, 10, 4, 1),
+  res <- data.frame(read_count = c(61, 41, 20, 16),
                     barcode = c("ATTAGCCCTGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGATTT", "ATTAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT",
-                              "AAAACCCCGGGGTTTTAAAACCCCGGGGTTTTAAAACCCCGGGGTTTT", "AAAACCCCTGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGATTT",
-                              "ATTAGCCGCGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGAATT", "AAAAACCCGGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGATTT",
-                              "AAAAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT"))
+                              "AAAACCCCGGGGTTTTAAAACCCCGGGGTTTTAAAACCCCGGGGTTTT", "AAAACCCCTGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGATTT"),
+                    stringsAsFactors = TRUE)
   test_res <- getReads(errorCorrection_single_variation(BC_dat = dat, maxDist = 2, save_it = FALSE, m = "hamming", EC_analysis = FALSE, nt = 1))
   expect_equal(res, test_res)
 
   res <- data.frame(read_count = c(51, 40, 20, 16, 10, 1),
                     barcode = c("ATTAGCCCTGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGATTT", "ATTAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT",
                                 "AAAACCCCGGGGTTTTAAAACCCCGGGGTTTTAAAACCCCGGGGTTTT", "AAAACCCCGGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGATTT",
-                                "ATTAGCCGCGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGAATT", "AAAAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT"))
+                                "ATTAGCCGCGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGAATT", "AAAAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT"), stringsAsFactors = TRUE)
   test_res <- getReads(errorCorrection_single_connections(BC_dat = dat, maxDist = 2, save_it = FALSE, m = "hamming", EC_analysis = FALSE, nt = 1))
   expect_equal(res, test_res)
 
   res <- data.frame(read_count = c(97, 41),
-                    barcode = c("ATTAGCCCTGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGATTT", "ATTAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT"))
+                    barcode = c("ATTAGCCCTGGGATTTAAAACCCCCGGGTTTTAAAACCCCGGGGATTT", "ATTAGCCCTGGGATTTAGGACTTCCGGGTATTAAAACCCCGGGGATTT"), stringsAsFactors = TRUE)
   test_res <- getReads(errorCorrection_single_graphComp(BC_dat = dat, maxDist = 2, save_it = FALSE, m = "hamming", EC_analysis = FALSE, nt = 1))
   expect_equal(res, test_res)
 

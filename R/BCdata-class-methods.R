@@ -31,7 +31,7 @@ getReads <- function(object) {
 #'            c("A", "C", "T", "G") %>% sample(replace = TRUE, size = 32) %>% paste0(collapse = "")
 #'        }))
 #' new_read_count_table <- data.frame(read_count = sample(1:1000, size = 20), barcode = bcs)
-#' BC_dat_alt <- setReads(BC_dat, new_read_count_table)
+#' BC_dat_new <- setReads(BC_dat, new_read_count_table)
 #'
 #' @export
 setReads <- function(object, value) {
@@ -76,7 +76,7 @@ getResultsDir <- function(object) {
 #' @examples
 #' data(BC_dat)
 #' new_path <- getwd()
-#' BC_dat_alt <- setResultsDir(BC_dat, new_path)
+#' BC_dat_new <- setResultsDir(BC_dat, new_path)
 #'
 #' @export
 setResultsDir <- function(object, value) {
@@ -124,7 +124,7 @@ getBackbone <- function(object) {
 #' @examples
 #' data(BC_dat)
 #' new_backbone <- getBackboneSelection("BC32-T-Sapphire")
-#' BC_dat_alt <- setBackbone(BC_dat, new_backbone)
+#' BC_dat_new <- setBackbone(BC_dat, new_backbone)
 #'
 #' @export
 setBackbone <- function(object, value) {
@@ -172,7 +172,7 @@ getLabel <- function(object) {
 #' @examples
 #' data(BC_dat)
 #' new_label <- "foo-bar"
-#' BC_dat_alt <- setLabel(BC_dat, new_label)
+#' BC_dat_new <- setLabel(BC_dat, new_label)
 #'
 #' @export
 setLabel <- function(object, value) {
@@ -191,4 +191,3 @@ setLabel <- function(object, value) {
 
   return(object)
 }
-

@@ -1,4 +1,4 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE---------------------------------------------------
 
 #rmarkdown::html_vignette
 
@@ -16,7 +16,7 @@
   require("ggplot2")
   
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    if (!requireNamespace("BiocManager", quietly = TRUE)) {
 #        install.packages("BiocManager")
@@ -25,7 +25,7 @@
 #    BiocManager::install(c("Biostrings", "ShortRead", "S4Vectors", "ggtree"))
 #  
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    require("genBaRcode")
 #  
@@ -50,7 +50,7 @@
 #                                dist_measure = "hamming")
 #  
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   getBackboneSelection()
   
@@ -61,7 +61,7 @@
   show(bb)
   
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   bb <- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
   source_dir <- system.file("extdata", package = "genBaRcode")
@@ -84,17 +84,17 @@
                               dist_measure = "hamming")
   
 
-## ----echo = FALSE, eval=TRUE, collapse=TRUE------------------------------
+## ----echo = FALSE, eval=TRUE, collapse=TRUE-----------------------------------
 
   methods::slot(BC_data, "results_dir") <- "/my/results/dir/"
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(BC_data)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   # if no results_dir is provided the source_dir automatically also becomes the results_dir
   BC_data_multiple <- processingRawData(file_name = "test_data.fastq.gz", 
@@ -114,18 +114,18 @@
                               dist_measure = "hamming")
   
 
-## ----echo = FALSE, eval=TRUE, collapse=TRUE------------------------------
+## ----echo = FALSE, eval=TRUE, collapse=TRUE-----------------------------------
 
   methods::slot(BC_data_multiple[[1]], "results_dir") <- "/my/results/dir/"
   methods::slot(BC_data_multiple[[2]], "results_dir") <- "/my/results/dir/"
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(BC_data_multiple)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   # if no results_dir is provided the source_dir automatically also becomes the results_dir
   BC_data_2 <- processingRawData(file_name = "test_data.fastq.gz",
@@ -144,22 +144,22 @@
                               dist_measure = "hamming")
   
 
-## ----echo = FALSE, eval=TRUE, collapse=TRUE------------------------------
+## ----echo = FALSE, eval=TRUE, collapse=TRUE-----------------------------------
 
   methods::slot(BC_data_2, "results_dir") <- "/my/results/dir/"
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(BC_data_2)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(BC_data)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   head(getReads(BC_data))
 
@@ -170,7 +170,7 @@
   show(getLabel(BC_data))
 
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    BC_data <- setReads(BC_data, data.frame(read_count = c(1:5), barcode = letters[1:5]))
 #    BC_data <- setResultsDir(BC_data, "/my/test/folder/")
@@ -178,7 +178,7 @@
 #    BC_data <- setLabel(BC_data, "new label")
 #  
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    BC_data <- readBCdat(path = "/my/test/folder/",
 #                         label = "test",
@@ -187,7 +187,7 @@
 #                         s = ";")
 #  
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    BC_data_EC <- errorCorrection(BC_dat = BC_data,
 #                                 maxDist = 4,
@@ -201,7 +201,7 @@
 #                                 start_small = TRUE)
 #  
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   BC_data_EC <- errorCorrection(BC_dat = BC_data, 
                                maxDist = 4,
@@ -214,12 +214,12 @@
                                EC_analysis = FALSE, 
                                start_small = TRUE)
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(BC_data_EC)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   BC_data_EC <- errorCorrection(BC_dat = BC_data, 
                                maxDist = 4,
@@ -233,12 +233,12 @@
                                start_small = FALSE)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(BC_data_EC)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   BC_data_EC <- errorCorrection(BC_dat = BC_data, 
                                maxDist = 4,
@@ -252,12 +252,12 @@
                                start_small = FALSE)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(BC_data_EC)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   BC_data_EC <- errorCorrection(BC_dat = BC_data, 
                                maxDist = 4,
@@ -271,12 +271,12 @@
                                start_small = FALSE)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(BC_data_EC)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   BC_data_EC <- errorCorrection(BC_dat = BC_data, 
                                maxDist = 4,
@@ -290,7 +290,7 @@
                                start_small = FALSE)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(BC_data_EC)
 
@@ -409,7 +409,7 @@
 #    plotReadFrequencies(BC_dat = BC_data, b = 30)
 #  
 
-## ----eval=FALSE----------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  
 #    plotDistanceVisNetwork(BC_dat = BC_data, minDist = 1, loga = TRUE, m = "hamming")
 #    plotDistanceIgraph(BC_dat = BC_data, minDist = 1, loga = TRUE, m = "hamming")
@@ -432,7 +432,7 @@
                       col_type = "topo.colors", legend_size = 2)
 
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    createGDF(BC_dat = BC_data, minDist = 1, loga = TRUE, m = "hamming")
 #  
@@ -448,7 +448,7 @@
                     type = "rectangular", m = "hamming")
 
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    BC_data_EC <- errorCorrection(BC_dat = BC_data,
 #                                   maxDist = 4,
@@ -512,7 +512,7 @@
                          minDist = 1, loga = TRUE, m = "hamming", ori_BCs = known_BCs)
   
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    plotDistanceVisNetwork_EC(BC_dat = BC_data, BC_dat_EC = BC_data_EC,
 #                              minDist = 1, loga = TRUE, m = "hamming", ori_BCs = known_BCs)
@@ -570,7 +570,7 @@
   plotVennDiagram(BC_dat = BC_list)
 
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    # choose colors
 #    test_colors <- RColorBrewer::brewer.pal(12, "Set3")
@@ -586,7 +586,7 @@
 #                    annotationSize = 2.5)
 #  
 
-## ----eval=FALSE----------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  
 #    # start Shiny app with the package internal test data file
 #    genBaRcode_app()
@@ -595,7 +595,7 @@
 #    genBaRcode_app(dat_dir = "/my/test/directory/")
 #  
 
-## ----eval=TRUE, out.width = 40, collapse=TRUE----------------------------
+## ----eval=TRUE, out.width = 40, collapse=TRUE---------------------------------
 
   getBackboneSelection()
   
@@ -606,13 +606,13 @@
   show(bb)
   
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    BC_data <- readBCdat(path = "/my/test/firectory", label = "test_label", s = ";",
 #                         BC_backbone = "ACTNNGGCNNTGANN", file_name = "test_file.csv")
 #  
 
-## ----eval=FALSE, collapse=TRUE-------------------------------------------
+## ----eval=FALSE, collapse=TRUE------------------------------------------------
 #  
 #    test_data_frame <- data.frame(read_count = seq(100, 400, 100),
 #                                  barcode = c("AAAAAAAA", "GGGGGGGG",
@@ -624,18 +624,18 @@
 #                        resDir = "/my/results/directory/")
 #  
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   test_data_frame <- data.frame(read_count = seq(100, 400, 100), 
                                 barcode = c("AAAAAAAA", "GGGGGGGG", 
                                             "TTTTTTTT", "CCCCCCCC"))
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(test_data_frame)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   BC_data_1 <- asBCdat(dat = test_data_frame, 
                       label = "test_label_1", 
@@ -646,12 +646,12 @@
                                 barcode = c("TTTTTTTT", "AATTTAAA", 
                                             "GGGGGGGG", "CCCCCCCC"))
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(test_data_frame)                              
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
   BC_data_2 <- asBCdat(dat = test_data_frame, 
                       label = "test_label_2", 
                       BC_backbone = "CCCNNAAANNTTTNNGGGNN", 
@@ -660,7 +660,7 @@
   test <- genBaRcode:::com_pair(BC_dat1 = BC_data_1, BC_dat2 = BC_data_2)
 
 
-## ----eval=TRUE, collapse=TRUE--------------------------------------------
+## ----eval=TRUE, collapse=TRUE-------------------------------------------------
 
   show(test)
   

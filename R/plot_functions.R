@@ -166,7 +166,7 @@ plotVennDiagram <- function(BC_dat, alpha_value = 0.4, colrs = NA, border_color 
     }
   }
 
-  dat <- data.frame(x = coord_x, y = coord_y, category = cate)
+  dat <- data.frame(x = coord_x, y = coord_y, category = cate, stringsAsFactors = TRUE)
 
   if(length(legend_sort) != 0) {
     if(length(unique(dat$category)) != length(legend_sort)) {
@@ -258,7 +258,6 @@ plotDistanceVisNetwork <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = N
   }
 
   net[.getDiagonalIndex(dim(net)[1])] <- 0
-
   net <- igraph::graph.adjacency(net)
 
   if (loga) {
@@ -285,7 +284,7 @@ plotDistanceVisNetwork <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = N
                         shadow = TRUE,
                         color.background = as.character(colrs[[1]]),
                         color.border = as.character(colrs[[1]]),
-                        color.highlight.border <- "gray")
+                        color.highlight.border = "gray", stringsAsFactors = TRUE)
   } else {
     nodes <- data.frame(id = 1:length(igraph::V(net)),
                         label = paste0(methods::slot(BC_dat, "reads")$"barcode", " - ",
@@ -296,10 +295,10 @@ plotDistanceVisNetwork <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = N
                         shadow = TRUE,
                         color.background = "black",
                         color.border = "darkgray",
-                        color.highlight.border <- "gray")
+                        color.highlight.border = "gray", stringsAsFactors = TRUE)
   }
 
-  edges <- data.frame(from = igraph::get.edgelist(net)[, 1], to = igraph::get.edgelist(net)[, 2])
+  edges <- data.frame(from = igraph::get.edgelist(net)[, 1], to = igraph::get.edgelist(net)[, 2], stringsAsFactors = TRUE)
 
   graph_visNetwork <- visNetwork::visNetwork(nodes, edges, width = "100%")
   graph_visNetwork <- visNetwork::visOptions(graph_visNetwork,
@@ -334,12 +333,6 @@ plotDistanceVisNetwork <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = N
 #'
 #' @return a visNetwork object.
 #' @export
-#'
-# @examples
-# data(BC_dat)
-# BC_dat_EC <- errorCorrection(BC_dat, maxDist = 8, EC_analysis = TRUE)
-
-# plotDistanceVisNetwork(BC_dat, BC_dat_EC, minDist = 1)
 
 plotDistanceVisNetwork_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRUE, equal_node_sizes = TRUE, BC_threshold = NULL, ori_BCs = NULL, complete = FALSE, col_type = "rainbow", m = "hamming") {
 
@@ -393,9 +386,6 @@ plotDistanceVisNetwork_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRU
     return(visNetwork::visNetwork(data.frame(), data.frame()))
   }
 
-  # minDists <- .getMinDist(BC_dat, ori_BCs, m)
-  # colrs <- .generateColors(minDists, type = col_type)
-
   nodes <- data.frame(id = 1:length(igraph::V(net)),
                         label = paste0(methods::slot(BC_dat, "reads")$"barcode", " - ",
                                        methods::slot(BC_dat, "reads")$"read_count"),
@@ -405,9 +395,9 @@ plotDistanceVisNetwork_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRU
                         shadow = TRUE,
                         color.background = colrsEC,
                         color.border = colrsEC,
-                        color.highlight.border <- "gray")
+                        color.highlight.border = "gray", stringsAsFactors = TRUE)
 
-  edges <- data.frame(from = igraph::get.edgelist(net)[, 1], to = igraph::get.edgelist(net)[, 2])
+  edges <- data.frame(from = igraph::get.edgelist(net)[, 1], to = igraph::get.edgelist(net)[, 2], stringsAsFactors = TRUE)
 
   graph_visNetwork <- visNetwork::visNetwork(nodes, edges, width = "100%")
   graph_visNetwork <- visNetwork::visOptions(graph_visNetwork, highlightNearest = TRUE)
@@ -438,7 +428,6 @@ plotDistanceVisNetwork_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRU
 #' @param lay a character string, identifying the prefered layout algorithm (see ggnetwork layout option).
 #' @param complete a logical value. If TRUE, every node will have at least one edge.
 #' @param col_type a character sting, choosing one of the available color palettes.
-#' @param outline a nnumeric value which adjusts the thickness of the black outline of each node.
 #' @param m a character string, Method for distance calculation, default value is Hamming distance. Possible values
 #' are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function
 #' of the stringdist-package for more information).
@@ -447,18 +436,8 @@ plotDistanceVisNetwork_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRU
 #'
 #' @return a ggplot2 object
 #' @export
-#'
-# @examples
-#
-# data(BC_dat)
-# data(BC_dat_EC)
-#
-# ori_BCs <- c("GGTCGAAGCTTCTTTCGGGCCGCACGGCTGCT",
-#              "CACGATCCGCTTCTATCGCGTGCACTACATGT",
-#              "GCTAAGGGCGATCACATCCACAAGCTTCTTTG")
-# ggplotDistanceGraph_EC(BC_dat, BC_dat_EC, equal_node_sizes = FALSE, ori_BCs = ori_BCs)
 
-ggplotDistanceGraph_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRUE, equal_node_sizes = TRUE, BC_threshold = NULL, ori_BCs = NULL, lay = "fruchtermanreingold", complete = FALSE, col_type = "rainbow", outline = 0.1, m = "hamming", scale_nodes = 1, scale_edges = 1) {
+ggplotDistanceGraph_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRUE, equal_node_sizes = TRUE, BC_threshold = NULL, ori_BCs = NULL, lay = "fruchtermanreingold", complete = FALSE, col_type = "rainbow", m = "hamming", scale_nodes = 1, scale_edges = 1) {
 
   if (dim(methods::slot(BC_dat, "reads"))[1] == 0) {
     return(ggplot2::ggplot())
@@ -554,7 +533,6 @@ ggplotDistanceGraph_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRUE, 
 #' @param lay a character string, identifying the prefered layout algorithm (see ggnetwork layout option, "?gplot.layout"). Default value is "fruchtermanreingold", but possible are also "circle", "eigen", "kamadakawai", "spring" and many more. Or the user provides a two-column matrix with as many rows as there are nodes in the network, in which case the matrix is used as nodes coordinates.
 #' @param complete a logical value. If TRUE, every node will have at least one edge.
 #' @param col_type a character sting, choosing one of the available color palettes ("rainbow", "heat.colors", "topo.colors", "greens", "wild" - see package "grDevices").
-#' @param outline a nnumeric value which adjusts the thickness of the black outline of each node.
 #' @param m a character string, Method for distance calculation, default value is Hamming distance. Possible values
 #' are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function
 #' of the stringdist-package for more information).
@@ -576,7 +554,7 @@ ggplotDistanceGraph_EC <- function(BC_dat, BC_dat_EC, minDist = 1, loga = TRUE, 
 #' }
 #'
 
-ggplotDistanceGraph <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL, lay = "fruchtermanreingold", complete = FALSE, col_type = "rainbow", outline = 0.1, m = "hamming", scale_nodes = 1, scale_edges = 1, legend_size = 4) {
+ggplotDistanceGraph <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL, lay = "fruchtermanreingold", complete = FALSE, col_type = "rainbow", m = "hamming", scale_nodes = 1, scale_edges = 1, legend_size = 4) {
 
   if (dim(methods::slot(BC_dat, "reads"))[1] == 0) {
     return(ggplot2::ggplot())
@@ -672,12 +650,6 @@ ggplotDistanceGraph <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL
 #'
 #' @return an igraph object.
 #' @export
-#'
-# @examples
-# data(BC_dat)
-# plotDistanceIgraph(BC_dat, minDist = 1, loga = TRUE, ori_BCs, threeD = FALSE,
-# complete = FALSE, col_type = "rainbow")
-
 
 plotDistanceIgraph <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL, threeD = FALSE, complete = FALSE, col_type = "rainbow", leg_pos = "left", inset = -0.125, title = "Distance", m = "hamming") {
 
@@ -795,11 +767,6 @@ plotTimeSeries <- function(ov_dat, colr = NULL, tp = NULL, x_label = "time", y_l
     ggplot2::ylab(y_label) + ggplot2::xlab(x_label) + #ggplot2::xlim(tp[1], tp[length(tp)]) +
     ggplot2::scale_x_discrete(breaks=tp, labels=tp, limits=tp)
 
-  # if(!is.null(labs)) {
-  #   print(labs)
-  #   ggOV <- suppressMessages(ggOV + ggplot2::scale_x_discrete(limits = labs))
-  # }
-
   return(ggOV)
 }
 
@@ -887,9 +854,6 @@ createGDF <- function(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL, col_type
 #' of the stringdist-package for more information).
 #'
 #' @export
-# @examples
-# data(BC_dat)
-# plotClusterTree(BC_dat, tree_est = "UPGMA", type = "unrooted", tipLabel = FALSE)
 
 plotClusterTree <- function(BC_dat, tree_est = "NJ", type = "unrooted", tipLabel = FALSE, m = "hamming") {
 
@@ -913,7 +877,6 @@ plotClusterTree <- function(BC_dat, tree_est = "NJ", type = "unrooted", tipLabel
 
   tree_data$tip.label <- as.character(methods::slot(BC_dat, "reads")$"barcode")
   graphics::plot(tree_data, type, show.tip.label = tipLabel)
-
 }
 
 #' @title Plotting a Cluster ggTree
@@ -956,7 +919,6 @@ plotClusterGgTree <- function(BC_dat, tree_est = "NJ", type = "rectangular", m =
 
 }
 
-
 #' @title Plotting a Kirchenplot
 #' @description Generates a barplot based on read counts. If \code{ori_BCs} is provided the bar color reflects the
 #' distance between a particular barcode to one of the provided barcode sequences.
@@ -973,10 +935,6 @@ plotClusterGgTree <- function(BC_dat, tree_est = "NJ", type = "rectangular", m =
 #'
 #' @return a ggplot2 object
 #' @export
-# @examples
-# data(BC_dat)
-# generateKirchenplot(BC_dat, loga = TRUE, col_type = NULL)
-
 generateKirchenplot <- function(BC_dat, ori_BCs = NULL, ori_BCs2 = NULL, loga = TRUE, col_type = NULL, m = "hamming", setLabels = c("BC-Set 1", "Rest", "BC-Set 2")) {
 
   if (length(m) != 1) {
@@ -993,7 +951,6 @@ generateKirchenplot <- function(BC_dat, ori_BCs = NULL, ori_BCs2 = NULL, loga = 
   } else {
     generateKirchenplot_single(BC_dat, ori_BCs, loga, col_type, m) + ggplot2::theme_light()
   }
-
 }
 
 generateKirchenplot_single <- function(BC_dat, ori_BCs = NULL, loga = TRUE, col_type = NULL, method) {
@@ -1008,7 +965,7 @@ generateKirchenplot_single <- function(BC_dat, ori_BCs = NULL, loga = TRUE, col_
 
   data_dim <- dim(methods::slot(BC_dat, "reads"))[1]
 
-  ggbar <- ggplot2::ggplot(data.frame(pos = 1:data_dim, methods::slot(BC_dat, "reads")), ggplot2::aes_string(x = "pos",
+  ggbar <- ggplot2::ggplot(data.frame(pos = 1:data_dim, methods::slot(BC_dat, "reads"), stringsAsFactors = TRUE), ggplot2::aes_string(x = "pos",
                                                                         y = "read_count")) +
     ggplot2::geom_bar(stat = "identity", fill = "darkgray") +
     ggplot2::xlab("barcodes") + ggplot2::ylab("barcode reads\n") +
@@ -1041,7 +998,6 @@ generateKirchenplot_single <- function(BC_dat, ori_BCs = NULL, loga = TRUE, col_
         ggplot2::labs(fill = method)
     }
   }
-
   return(ggbar)
 }
 
@@ -1071,7 +1027,7 @@ generateKirchenplot_separate <- function(BC_dat, ori_BCs1 = NULL, ori_BCs2 = NUL
 
       data_dim <- dim(methods::slot(BC_dat, "reads"))[1]
 
-      res <- data.frame(pos = 1:data_dim, methods::slot(BC_dat, "reads"), type = factor(type, levels = c(setLabels[1], setLabels[2], setLabels[3])), minDists = factor(minDist, levels = unique(sort(as.numeric(names(dist_col[[2]]))))), colrs = dist_col[[1]])
+      res <- data.frame(pos = 1:data_dim, methods::slot(BC_dat, "reads"), type = factor(type, levels = c(setLabels[1], setLabels[2], setLabels[3])), minDists = factor(minDist, levels = unique(sort(as.numeric(names(dist_col[[2]]))))), colrs = dist_col[[1]], stringsAsFactors = TRUE)
 
       ggbar <- ggplot2::ggplot(res, ggplot2::aes_string(x = "pos", y = "read_count", fill = "minDists")) +
         ggplot2::geom_bar(stat = "identity")  +
@@ -1087,14 +1043,9 @@ generateKirchenplot_separate <- function(BC_dat, ori_BCs1 = NULL, ori_BCs2 = NUL
         distance <- .getMinDist(BC_dat, ori_BCs1, method)
         dist_col <- .generateColors(distance, type = ifelse(is.null(col_type), "rainbow", col_type))
 
-        # distance[ind2] <- -1
-        # dist_col[[1]][ind2] <- col2
-        # dist_col[[2]] <- c(col2, dist_col[[2]])
-        # names(dist_col[[2]]) <- c(-1, unique(sort(as.numeric(distance))))
-
         data_dim <- dim(methods::slot(BC_dat, "reads"))[1]
 
-        res <- data.frame(pos = 1:data_dim, methods::slot(BC_dat, "reads"), type = factor(type, levels = c(setLabels[1], "contaminations", setLabels[2])), distances = factor(distance, levels = unique(sort(as.numeric(names(dist_col[[2]]))))), colrs = dist_col[[1]])
+        res <- data.frame(pos = 1:data_dim, methods::slot(BC_dat, "reads"), type = factor(type, levels = c(setLabels[1], "contaminations", setLabels[2])), distances = factor(distance, levels = unique(sort(as.numeric(names(dist_col[[2]]))))), colrs = dist_col[[1]], stringsAsFactors = TRUE)
 
         ggbar <- ggplot2::ggplot(res, ggplot2::aes_string(x = "pos", y = "read_count", fill = "distances")) +
           ggplot2::geom_bar(stat = "identity")  +
@@ -1102,8 +1053,6 @@ generateKirchenplot_separate <- function(BC_dat, ori_BCs1 = NULL, ori_BCs2 = NUL
           ggplot2::xlab("barcodes") + ggplot2::ylab("barcode reads\n") +
           ggplot2::theme(axis.text.x = ggplot2::element_blank(),
                          axis.ticks.x = ggplot2::element_blank()) +
-          #ggplot2::scale_y_continuous(trans = "log2") +
-          #ggplot2::ylab("log2(barcode reads)\n") +
           ggplot2::scale_fill_manual(values = dist_col[[2]], name = paste0("distance"))
     }
   }
@@ -1133,47 +1082,6 @@ generateKirchenplot_separate <- function(BC_dat, ori_BCs1 = NULL, ori_BCs2 = NUL
 #' @examples
 #' data(BC_dat)
 #' plotReadFrequencies <- function(BC_dat, b = 10, show_it = TRUE)
-
-# plotReadFrequencies <- function(BC_dat, b = 30, bw = NULL, show_it = FALSE, log = FALSE, dens = FALSE) {
-#
-#   if (dens & log) {
-#     log <- FALSE
-#     warning("Its either density = TRUE or log = TRUE.")
-#   }
-#
-#   if (dim(methods::slot(BC_dat, "reads"))[1] == 0) {
-#     return(ggplot2::ggplot())
-#   }
-#
-#   if (show_it) {
-#     tmp <- table(methods::slot(BC_dat, "reads")$read_count)
-#     print(data.frame('read count' = names(tmp), 'number of BCs' = as.numeric(tmp)))
-#   }
-#
-#   plot_data <- methods::slot(BC_dat, "reads")
-#   if (log) {
-#     plot_data[, 1] <- plot_data[, 1] + 1
-#   }
-#
-#   ggbar <- ggplot2::ggplot(plot_data, ggplot2::aes_string(x = "read_count")) +
-#                 ggplot2::xlab("read count")
-#
-#   if (dens) {
-#     ggbar <- ggbar + ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::stat(density)), binwidth = 1, colour = "black", fill = "gray") +
-#                 ggplot2::geom_density(alpha = .2, fill = "#66CCFF") +
-#                 ggplot2::ylab("barcode read frequencies\n")
-#   } else {
-#     ggbar <- ggbar + ggplot2::geom_histogram(bins = b, binwidth = bw, colour = "black", fill = "gray") +
-#                 ggplot2::ylab(ifelse(log, "log(number of barcodes)\n", "number of barcodes\n"))
-#   }
-#
-#   if (log) {
-#     ggbar <- ggbar + ggplot2::scale_y_log10()
-#   }
-#
-#   return(ggbar + ggplot2::theme_light())
-# }
-# @importFrom stats density
 plotReadFrequencies <- function(BC_dat, b = 30, bw = NULL, show_it = FALSE, log = FALSE, dens = FALSE) {
 
   if (dens & log) {
@@ -1187,7 +1095,7 @@ plotReadFrequencies <- function(BC_dat, b = 30, bw = NULL, show_it = FALSE, log 
 
   if (show_it) {
     tmp <- table(methods::slot(BC_dat, "reads")$read_count)
-    print(data.frame('read count' = names(tmp), 'number of BCs' = as.numeric(tmp)))
+    print(data.frame('read count' = names(tmp), 'number of BCs' = as.numeric(tmp)), stringsAsFactors = TRUE)
   }
 
   plot_data <- methods::slot(BC_dat, "reads")
@@ -1234,15 +1142,13 @@ plotReadFrequencies <- function(BC_dat, b = 30, bw = NULL, show_it = FALSE, log 
 #' plotQualityScoreDis(source_dir, file_name = "test_data.fastq", type = "mean")
 #'
 #' }
-#'
-# @importFrom stats count
 plotQualityScoreDis <- function(source_dir, file_name, type = "median", rel = FALSE) {
 
   dat <- ShortRead::readFastq(dirPath = source_dir, pattern = file_name)
 
   w <- ShortRead::width(dat)[1]
   scores <- methods::as(ShortRead::FastqQuality(Biostrings::quality(attr(dat, "quality"))), "matrix")
-  scores <- data.frame(mean = rowSums(scores)/w, median = apply(scores, 1, stats::median))
+  scores <- data.frame(mean = rowSums(scores)/w, median = apply(scores, 1, stats::median), stringsAsFactors = TRUE)
 
   gghist <- ggplot2::ggplot(scores, ggplot2::aes_string(x = type)) +
     ggplot2::xlab(paste(type, "score per sequence")) +
@@ -1256,7 +1162,6 @@ plotQualityScoreDis <- function(source_dir, file_name, type = "median", rel = FA
   } else {
     gghist + ggplot2::geom_histogram(binwidth = 1)
   }
-
 }
 
 #' @title Plotting Nucleotide Frequency
@@ -1275,7 +1180,8 @@ plotNucFrequency <- function(source_dir, file_name) {
 
   dat <- data.frame(pos = 1:5,
                     label = names(qa_summary[["baseCalls"]]),
-                    values = as.numeric(qa_summary[["baseCalls"]] / sum(qa_summary[["baseCalls"]])))
+                    values = as.numeric(qa_summary[["baseCalls"]] / sum(qa_summary[["baseCalls"]])),
+                    stringsAsFactors = TRUE)
 
   ggplot2::ggplot(dat, ggplot2::aes_string(x = "pos", y = "values")) + ggplot2::geom_bar(stat = "identity") +
     ggplot2::ylab("frequency") + ggplot2::xlab("") +
@@ -1292,7 +1198,6 @@ plotNucFrequency <- function(source_dir, file_name) {
 #'
 #' @return a ggplot2 object.
 #' @export
-#'
 
 plotQualityScorePerCycle <- function(source_dir, file_name) {
 
@@ -1312,7 +1217,7 @@ plotQualityScorePerCycle <- function(source_dir, file_name) {
                     Quality1 = mean_dat,
                     Quality2 = quant_dat1,
                     Quality3 = quant_dat2,
-                    Quality4 = quant_dat3)
+                    Quality4 = quant_dat3, stringsAsFactors = TRUE)
 
   tmp <- reshape2::melt(tmp, id = "Cycle")
 
@@ -1339,21 +1244,15 @@ plotQualityScorePerCycle <- function(source_dir, file_name) {
 #'
 #' @return a ggplot2 object
 #' @export
-#'
-# @examples
-# data(BC_dat)
-# plotSeqLogo(BC_dat)
 
 plotSeqLogo <- function(BC_dat, colrs = NULL) {
 
   if (sum(methods::is(BC_dat) == "BCdat") == 1) {
     BC_dat <- as.character(methods::slot(BC_dat, "reads")$barcode)
   }
-
   if (length(BC_dat) == 0) {
     return(ggplot2::ggplot())
   }
-
 
   if (length(colrs) != 5) {
     if (!is.null(colrs)) {
@@ -1367,6 +1266,8 @@ plotSeqLogo <- function(BC_dat, colrs = NULL) {
   ggplot2::ggplot() +
     ggseqlogo::geom_logo(data = BC_dat, namespace = 'AGTCN', method = "p", col_scheme = cs) +
     ggplot2::theme_light() +
-    ggplot2::theme(axis.ticks.y = ggplot2::element_line(size = 0), panel.grid.major = ggplot2::element_blank(), panel.grid.minor = ggplot2::element_blank()) +
+    ggplot2::theme(#axis.ticks.y = ggplot2::element_line(size = 0),
+                   panel.grid.major = ggplot2::element_blank(),
+                   panel.grid.minor = ggplot2::element_blank()) +
     ggplot2::ylab("probability")
 }

@@ -4,9 +4,15 @@
 \alias{generateKirchenplot}
 \title{Plotting a Kirchenplot}
 \usage{
-generateKirchenplot(BC_dat, ori_BCs = NULL, ori_BCs2 = NULL,
-  loga = TRUE, col_type = NULL, m = "hamming",
-  setLabels = c("BC-Set 1", "Rest", "BC-Set 2"))
+generateKirchenplot(
+  BC_dat,
+  ori_BCs = NULL,
+  ori_BCs2 = NULL,
+  loga = TRUE,
+  col_type = NULL,
+  m = "hamming",
+  setLabels = c("BC-Set 1", "Rest", "BC-Set 2")
+)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}

@@ -4,8 +4,7 @@
 \alias{plotClusterGgTree}
 \title{Plotting a Cluster ggTree}
 \usage{
-plotClusterGgTree(BC_dat, tree_est = "NJ", type = "rectangular",
-  m = "hamming")
+plotClusterGgTree(BC_dat, tree_est = "NJ", type = "rectangular", m = "hamming")
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}

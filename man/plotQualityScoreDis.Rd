@@ -4,8 +4,7 @@
 \alias{plotQualityScoreDis}
 \title{Plotting Quality Score Distribution}
 \usage{
-plotQualityScoreDis(source_dir, file_name, type = "median",
-  rel = FALSE)
+plotQualityScoreDis(source_dir, file_name, type = "median", rel = FALSE)
 }
 \arguments{
 \item{source_dir}{a character string of the path to the source directory.}
@@ -31,5 +30,4 @@ source_dir <- system.file("extdata", package = "genBaRcode")
 plotQualityScoreDis(source_dir, file_name = "test_data.fastq", type = "mean")
 
 }
-
 }

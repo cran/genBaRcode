@@ -4,11 +4,21 @@
 \alias{ggplotDistanceGraph_EC}
 \title{Plotting a Distance Network (error correction)}
 \usage{
-ggplotDistanceGraph_EC(BC_dat, BC_dat_EC, minDist = 1, loga = TRUE,
-  equal_node_sizes = TRUE, BC_threshold = NULL, ori_BCs = NULL,
-  lay = "fruchtermanreingold", complete = FALSE,
-  col_type = "rainbow", outline = 0.1, m = "hamming",
-  scale_nodes = 1, scale_edges = 1)
+ggplotDistanceGraph_EC(
+  BC_dat,
+  BC_dat_EC,
+  minDist = 1,
+  loga = TRUE,
+  equal_node_sizes = TRUE,
+  BC_threshold = NULL,
+  ori_BCs = NULL,
+  lay = "fruchtermanreingold",
+  complete = FALSE,
+  col_type = "rainbow",
+  m = "hamming",
+  scale_nodes = 1,
+  scale_edges = 1
+)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}
@@ -31,8 +41,6 @@ contain edges.}
 \item{complete}{a logical value. If TRUE, every node will have at least one edge.}
 
 \item{col_type}{a character sting, choosing one of the available color palettes.}
-
-\item{outline}{a nnumeric value which adjusts the thickness of the black outline of each node.}
 
 \item{m}{a character string, Method for distance calculation, default value is Hamming distance. Possible values
 are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function

@@ -4,8 +4,13 @@
 \alias{plotClusterTree}
 \title{Plotting a Cluster Tree}
 \usage{
-plotClusterTree(BC_dat, tree_est = "NJ", type = "unrooted",
-  tipLabel = FALSE, m = "hamming")
+plotClusterTree(
+  BC_dat,
+  tree_est = "NJ",
+  type = "unrooted",
+  tipLabel = FALSE,
+  m = "hamming"
+)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}

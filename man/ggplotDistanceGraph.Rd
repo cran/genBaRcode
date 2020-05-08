@@ -4,10 +4,19 @@
 \alias{ggplotDistanceGraph}
 \title{Plotting a Distance Network}
 \usage{
-ggplotDistanceGraph(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL,
-  lay = "fruchtermanreingold", complete = FALSE,
-  col_type = "rainbow", outline = 0.1, m = "hamming",
-  scale_nodes = 1, scale_edges = 1, legend_size = 4)
+ggplotDistanceGraph(
+  BC_dat,
+  minDist = 1,
+  loga = TRUE,
+  ori_BCs = NULL,
+  lay = "fruchtermanreingold",
+  complete = FALSE,
+  col_type = "rainbow",
+  m = "hamming",
+  scale_nodes = 1,
+  scale_edges = 1,
+  legend_size = 4
+)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}
@@ -24,8 +33,6 @@ contain edges.}
 \item{complete}{a logical value. If TRUE, every node will have at least one edge.}
 
 \item{col_type}{a character sting, choosing one of the available color palettes ("rainbow", "heat.colors", "topo.colors", "greens", "wild" - see package "grDevices").}
-
-\item{outline}{a nnumeric value which adjusts the thickness of the black outline of each node.}
 
 \item{m}{a character string, Method for distance calculation, default value is Hamming distance. Possible values
 are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function

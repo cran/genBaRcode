@@ -6,7 +6,6 @@
 #'
 #' @return a list containing the shared and the unqiue barcodes.
 #' @export
-#'
 com_pair <- function(BC_dat1 = NULL, BC_dat2 = NULL) {
 
   if (is.null(BC_dat1) & is.null(BC_dat2)) {
@@ -22,13 +21,25 @@ com_pair <- function(BC_dat1 = NULL, BC_dat2 = NULL) {
 
   ind1 <- match(dat1$barcode, dat2$barcode)
 
+  dat1[!is.na(ind1), ]
+  dat2[ind1[!is.na(ind1)], ]
+
   BCs <- list()
-  BCs$shared <- cbind(dat1[!is.na(ind1), ], dat2[ind1[!is.na(ind1)], ])
-  BCs$shared <- cbind(BCs$shared, BCs$shared[, 1] - BCs$shared[, 3])
+  BCs$shared <- cbind(dat1[!is.na(ind1), c(2, 1)], dat2[ind1[!is.na(ind1)], 1])
+  BCs$shared <- cbind(BCs$shared, BCs$shared[, 2] - BCs$shared[, 3])
   BCs$unique_sample1 <- dat1[is.na(ind1), ]
-  names(BCs$shared)[5] <- "reads_diff"
   BCs$unique_sample2 <- dat2[(1:dim(dat2)[1])[-ind1[!is.na(ind1)]], ]
 
+  names(BCs$shared) <- c("barcode", "read_count_1", "read_count_2", "read_count_diff")
+  if(is.factor(BCs$shared$barcode)) {
+    BCs$shared$barcode <- droplevels(BCs$shared$barcode)
+  }
+  if(is.factor(BCs$unique_sample1$barcode)) {
+    BCs$unique_sample1$barcode <- droplevels(BCs$unique_sample1$barcode)
+  }
+  if(is.factor(BCs$unique_sample2$barcode)) {
+    BCs$unique_sample2$barcode <- droplevels(BCs$unique_sample2$barcode)
+  }
   return(BCs)
 }
 
@@ -40,7 +51,6 @@ com_pair <- function(BC_dat1 = NULL, BC_dat2 = NULL) {
 #' path to the package inherent example fastq file
 #'
 #' @export
-
 genBaRcode_app <- function(dat_dir = system.file("extdata", package = "genBaRcode")) {
 
   tmp <- unlist(strsplit(dat_dir, split = ""))
@@ -55,19 +65,15 @@ genBaRcode_app <- function(dat_dir = system.file("extdata", package = "genBaRcod
   if (appDir == "") {
     stop("Could not find example directory. Try re-installing the `genBaRcode` package.", call. = FALSE)
   }
-
   shiny::runApp(appDir, display.mode = "normal", quiet = TRUE)
-
 }
 
 get_help_txt <- function(fct = NULL) {
-
   rdbfile <- file.path(find.package("genBaRcode"), "help", "genBaRcode")
   rdb <- utils::getFromNamespace("fetchRdDB", "tools")(rdbfile, key = fct)
 
   txt <- utils::capture.output(tools::Rd2HTML(rdb))
 
-  #paste(txt[c(-1:-5, -(length(txt)))], collapse = " ")
   return(c("", "", txt))
 }
 
@@ -105,7 +111,7 @@ getBackboneSelection <- function(id = NULL) {
                "CTANNCACNNAGANNCTTNNCGANNCTANNGGANNCTTNNGAT")
 
   if (is.null(id)) {
-    return(print(format(data.frame(name = BB_names, sequences = BB_seqs), justify = "left", width = 20), right = FALSE))
+    return(print(format(data.frame(name = BB_names, sequences = BB_seqs, stringsAsFactors = TRUE), justify = "left", width = 20), right = FALSE))
   } else {
     if (is.numeric(id)) {
       BB_seqs[id]
@@ -121,39 +127,6 @@ getBackboneSelection <- function(id = NULL) {
   }
 }
 
-# @importFrom foreach %dopar%
-# makeParallel <- function(dat, func, cpus, split = FALSE, ...) {
-#
-#   if(split) {
-#     psize <- floor(length(dat) / cpus)
-#     dat <- lapply(1:cpus, function(x) {
-#       if(x == 1) {
-#         dat[1:psize]
-#       } else {
-#         if(x == cpus) {
-#           dat[((psize*(x-1))+1):length(dat)]
-#         } else {
-#           dat[((psize*(x-1))+1):(psize*x)]
-#         }
-#       }
-#     })
-#   }
-#
-#   cl <- parallel::makeCluster(cpus)
-#   doParallel::registerDoParallel(cl)
-#
-#   # due to dopar problems
-#   i <- NULL
-#   tmp <- foreach::foreach(i = 1:length(dat)) %dopar% {
-#     func(dat[[i]], ...)
-#   }
-#
-#   parallel::stopCluster(cl)
-#
-#   return(tmp)
-# }
-
-
 #' @title Data Type Conversion
 #'
 #' @description Converts a data.frame into a BCdat object.
@@ -166,7 +139,6 @@ getBackboneSelection <- function(id = NULL) {
 #' @return a BCdat object.
 #' @export
 #' @importFrom methods new
-
 asBCdat <- function(dat, label = "empty", BC_backbone = "none", resDir = getwd()) {
 
   if (dim(dat)[2] != 2) {
@@ -176,7 +148,7 @@ asBCdat <- function(dat, label = "empty", BC_backbone = "none", resDir = getwd()
       stop("# First column contains number of read counts therefore has to be of type numeric.")
     }
     index <- order(as.numeric(dat[, 1]), decreasing = TRUE)
-    dat <- data.frame(read_count = as.numeric(dat[index, 1]), barcode = as.character(dat[index, 2]))
+    dat <- data.frame(read_count = as.numeric(dat[index, 1]), barcode = as.character(dat[index, 2]), stringsAsFactors = TRUE)
   }
 
   return(methods::new(Class = "BCdat", reads = dat, results_dir = resDir,
@@ -189,8 +161,6 @@ asBCdat <- function(dat, label = "empty", BC_backbone = "none", resDir = getwd()
 #' @param colrs a character vector containing a list of hex colors
 #'
 #' @return a color vector.
-#'
-
 .hex2rgbColor <- function(colrs) {
 
   if (is.vector(colrs)) {
@@ -220,13 +190,12 @@ asBCdat <- function(dat, label = "empty", BC_backbone = "none", resDir = getwd()
 #' @return a BCdat object.
 #' @export
 #' @importFrom methods new
-
 readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 
   path <- .testDirIdentifier(path)
 
   dat <- utils::read.table(paste(path, file_name, sep = ""), header = TRUE, sep = s)
-  dat <- data.frame(read_count = as.numeric(dat$read_count), barcode = as.character(dat$barcode))
+  dat <- data.frame(read_count = as.numeric(dat$read_count), barcode = as.character(dat$barcode), stringsAsFactors = TRUE)
 
   if (label == "") {
     label <- unlist(strsplit(file_name, split = "[.]"))[1]
@@ -248,10 +217,8 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 #' @param n an integer indicating the size of the resulting index matrix.
 #'
 #' @return a locigal matrix of size \code{n} x \code{n}
-
 .getDiagonalIndex <- function(n) {
 
-  #index <- matrix(TRUE, nrow = n, ncol = n)
   return(
     matrix(
         unlist(
@@ -269,9 +236,7 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 #' @description Extracts barcode positions.
 #'
 #' @param bc_backbone a character vector.
-
 .getWobblePos <- function(bc_backbone = "") {
-
   bc_backbone <- unlist(strsplit(bc_backbone, ""))
   wobble_pos <- which(bc_backbone == "N")
 
@@ -283,7 +248,6 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 #' @description Checks directory paths for correctness and if nessesary corrects them.
 #'
 #' @param s a character string.
-
 .testDirIdentifier <- function(s) {
 
   if (!is.character(s)) {
@@ -304,7 +268,6 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 #' @description Identifies the barcode positions within the barcode backbone and generates a awk command.
 #'
 #' @param wobble_pos a character string.
-
 .getBarcodeFilter <- function(wobble_pos) {
 
   seq_length <- NULL
@@ -338,7 +301,6 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 #'
 #' @param bc_backbone a character string (barcode pattern).
 #' @param patterns_file a character string (file name)
-
 .createPatternFile <- function(bc_backbone, patterns_file) {
 
   bc_backbone <- unlist(strsplit(bc_backbone, ""))
@@ -367,9 +329,7 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 #' @param m a character string, Method for distance calculation, default value is Hamming distance. Possible values
 #' are "osa", "lv", "dl", "hamming", "lcs", "qgram", "cosine", "jaccard", "jw", "soundex" (see stringdist function
 #' of the stringdist-package for more information).
-
 .getMinDist <- function(BC_dat, ori_BCs, m = "hamming") {
-
   HD_values <- unlist(lapply(methods::slot(BC_dat, "reads")$"barcode", function(x) {
         min(stringdist::stringdist(ori_BCs, x, m))
   }))
@@ -395,7 +355,6 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 #' @param minHD a numeric vector of all the minimum hamming distances.
 #' @param type a character string. Possible Values are "rainbow", "heat.colors", "topo.colors", "greens", "wild".
 #' @param alpha a numeric value between 0 and 1, modifies colour transparency.
-
 .generateColors <- function(minHD, type = "rainbow", alpha = 1) {
 
   BC_dist <- sort(unique(minHD))
@@ -421,7 +380,6 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
       }
     }
   }
-
   dist_col <- unlist(lapply(minHD, function(x) {
               color_list[BC_dist == x]
           }))
@@ -436,12 +394,7 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 #' @description Converts a vector of character strings (DNA sequences) into its reverse complement.
 #'
 #' @param seq_dat a character vector containing DNA sequences
-
 .revComp <- function(seq_dat) {
-
-  # if(!is.character(seq_dat)) {
-  #   stop("# a character vector is required")
-  # }
 
   tmp <- unique(unlist(strsplit(as.character(seq_dat), split = "")))
   if (sum(tmp %in% c("A", "C", "T", "G", "N")) != length(tmp)) {
@@ -462,7 +415,6 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
 #'
 #' @param seq_dat a character vector.
 #' @param word_length an integer giving the word length.
-
 .revComp_EqLength <- function(seq_dat, word_length) {
 
   seq_dat <- unlist(strsplit(seq_dat, ""))
@@ -477,14 +429,12 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
   seq_dat[seq_dat == "c"] <- "G"
 
   return(apply(matrix(seq_dat, ncol = word_length, byrow = TRUE), 1, function(x) paste(x[length(x):1], collapse = "")))
-
 }
 
 #' @title DNA string manipulation for unequal string sizes
 #' @description Converts a vector of unequally long character strings into the reverse complement.
 #'
 #' @param seq_dat A character vector.
-
 .revComp_UneqLength <- function(seq_dat) {
 
   seq_dat <- lapply(seq_dat, function(x) {
@@ -504,4 +454,16 @@ readBCdat <- function(path, label = "", BC_backbone = "", file_name, s = ";") {
   return(seq_dat)
 }
 
+getWobble <- function(BCs, bc_backbone) {
+  wobble_pos <- .getWobblePos(bc_backbone)
+
+  BCs <- strsplit(BCs, split = "")
+  tmp <- lapply(BCs, function(x, wobble_pos) {
+    paste0(x[wobble_pos], collapse = "")
+  }, wobble_pos
+  )
+  dat <- data.frame(unlist(tmp), stringsAsFactors = TRUE)
+
+  return(dat)
+}
 

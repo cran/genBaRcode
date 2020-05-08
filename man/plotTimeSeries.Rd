@@ -4,8 +4,13 @@
 \alias{plotTimeSeries}
 \title{Plotting Time Series Data}
 \usage{
-plotTimeSeries(ov_dat, colr = NULL, tp = NULL, x_label = "time",
-  y_label = "contribution")
+plotTimeSeries(
+  ov_dat,
+  colr = NULL,
+  tp = NULL,
+  x_label = "time",
+  y_label = "contribution"
+)
 }
 \arguments{
 \item{ov_dat}{a numeric matrix consisting of all time points as columns and all barcode sequences as rows and the corresponding read counts as numerical values (see function \code{generateTimeSeriesData()}).}

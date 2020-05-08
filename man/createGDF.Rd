@@ -4,8 +4,14 @@
 \alias{createGDF}
 \title{Creating a gdf File}
 \usage{
-createGDF(BC_dat, minDist = 1, loga = TRUE, ori_BCs = NULL,
-  col_type = "rainbow", m = "hamming")
+createGDF(
+  BC_dat,
+  minDist = 1,
+  loga = TRUE,
+  ori_BCs = NULL,
+  col_type = "rainbow",
+  m = "hamming"
+)
 }
 \arguments{
 \item{BC_dat}{a BCdat object.}
