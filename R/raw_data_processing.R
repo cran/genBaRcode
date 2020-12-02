@@ -379,15 +379,17 @@ BC_matching <- function(dat, label, results_dir, mismatch, indels, bc_backbone, 
   if (!indels & sum(nchar(BCs) != read_length) > 0) {
     BCs <- fixBorderlineBCs(BCs, mismatch, match_matrix, read_length)
   }
-  seqs <- seqs[-match_matrix$group]
 
+  if(length(match_matrix$group) != 0) {
+    seqs <- seqs[-match_matrix$group]
+  }
   # second, w/ mismatch but smnaller data set
   if (mismatch > 0) {
     match_index <- Biostrings::vmatchPattern(bc_backbone, seqs,
                                              max.mismatch = mismatch, min.mismatch = 1,
                                              with.indels = indels, fixed = FALSE,
                                              algorithm = "auto")
-    match_matrix <- data.frame(match_index, stringsAsFactors = TRUE)
+    match_matrix <- as.data.frame(match_index)
     if (sum(duplicated(match_matrix$group)) != 0) {
       warning("# Duplicated backbone matches (mismatch > 0)")
       if (full_output) {
@@ -400,8 +402,9 @@ BC_matching <- function(dat, label, results_dir, mismatch, indels, bc_backbone, 
     BCsTmp <- substr(as.character(seqs)[match_matrix$group],
                      start = match_matrix$start,
                      stop = match_matrix$end)
-    seqs <- seqs[-match_matrix$group]
-
+    if(length(match_matrix$group) != 0) {
+      seqs <- seqs[-match_matrix$group]
+    }
     if (!indels & sum(nchar(BCsTmp) != read_length) > 0) {
       BCsTmp <- fixBorderlineBCs(BCsTmp, mismatch, match_matrix, read_length)
     }

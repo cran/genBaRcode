@@ -765,7 +765,8 @@ plotTimeSeries <- function(ov_dat, colr = NULL, tp = NULL, x_label = "time", y_l
     ggplot2::scale_color_manual(values = coolr) +
     ggplot2::theme(legend.position = "none") +
     ggplot2::ylab(y_label) + ggplot2::xlab(x_label) + #ggplot2::xlim(tp[1], tp[length(tp)]) +
-    ggplot2::scale_x_discrete(breaks=tp, labels=tp, limits=tp)
+    #ggplot2::scale_x_discrete(breaks=tp, labels=tp, limits=tp)
+    ggplot2::scale_x_continuous(breaks = 1:length(tp), labels = tp)
 
   return(ggOV)
 }
