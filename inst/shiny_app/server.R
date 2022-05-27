@@ -380,7 +380,7 @@ shinyServer(
                                                                "Own Design")),
 
         conditionalPanel(
-          condition = "input.backbone == 'own Design'",
+          condition = "input.backbone == 'Own Design'",
           textInput("ownDesign", label = "backbone", value = "", width = NULL, placeholder = "N indicates variable positions e.g. ACTNNGCANN")
         ),
 
