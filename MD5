@@ -1,4 +1,4 @@
-4714f480337acda763477b518ac3c2c1 *DESCRIPTION
+af8d533bac7bb26f87d7fd6728c3db6c *DESCRIPTION
 a722a3e109e61d1d654e76f16f22084f *NAMESPACE
 8217005f76eaf536c9eda2dbcfbb0480 *R/BCdata-class-methods.R
 f1514ae929f54c0202dc9d32cf94c547 *R/BCdata-class.R
@@ -13,10 +13,10 @@ f793694d8e46762b7a13cb840d0f7e20 *data/BC_dat.RData
 888687064fd5d4bbc26c10430753dfa1 *data/BC_dat_EC.RData
 9bb851c53e64a0dd698d39496979409e *inst/doc/genBaRcode_GUI_Vignette.R
 753a72002e4a26facfd030a12bff1696 *inst/doc/genBaRcode_GUI_Vignette.Rmd
-9879eeb5d5c5af774d1a6fb0fc2ed6ed *inst/doc/genBaRcode_GUI_Vignette.pdf
+6674e22e5a1a0c7cd8e2bdec33438718 *inst/doc/genBaRcode_GUI_Vignette.pdf
 131014b65712672dbadb27ad509fa8fb *inst/doc/genBaRcode_Vignette.R
 aa3f700480b328b767532b9d8cd81253 *inst/doc/genBaRcode_Vignette.Rmd
-e3ff49a64c9dde003ee14e49c0795c6d *inst/doc/genBaRcode_Vignette.pdf
+65b185a289a5450e337e66a5c500692c *inst/doc/genBaRcode_Vignette.pdf
 d38eab66cc7edde77443acf170a87995 *inst/extdata/knownBCs.txt
 76e5b21df3192de7ca70982862a677cd *inst/extdata/test_BCs.csv
 ca54a03abd7f45940d08680b14e3760f *inst/extdata/test_data.fastq.gz
