@@ -893,8 +893,10 @@ plotClusterTree <- function(BC_dat, tree_est = "NJ", type = "unrooted", tipLabel
 #' @return a ggtree object.
 #' @export
 #' @examples
+#' \dontrun{
 #' data(BC_dat)
 #' plotClusterGgTree(BC_dat, tree_est = "UPGMA", type = "circular")
+#' }
 
 plotClusterGgTree <- function(BC_dat, tree_est = "NJ", type = "rectangular", m = "hamming") {
 
@@ -1259,16 +1261,57 @@ plotSeqLogo <- function(BC_dat, colrs = NULL) {
     if (!is.null(colrs)) {
       warning(" # 5 colors needed (A, T, C, G, N)")
     }
-    colrs <- c(RColorBrewer::brewer.pal(5, "Set3")[-2], "black")
+    colrs <- c(RColorBrewer::brewer.pal(5, "Set3")[-2], "darkgray")
   }
 
-  cs <- ggseqlogo::make_col_scheme(chars = c('A', 'T', 'C', 'G', 'N'), cols = colrs)
+  freqs <- unlist(lapply(BC_dat, function(x) {
+    unlist(strsplit(as.character(x), split = ""))
+  }))
+  freqs <- matrix(freqs, byrow = TRUE, ncol = nchar(as.character(BC_dat[1])))
+  freqs <- apply(freqs, 2, function(x) {
+              table(factor(x, levels = c("A", "T", "C", "G", "N")))
+            })
 
-  ggplot2::ggplot() +
-    ggseqlogo::geom_logo(data = BC_dat, namespace = 'AGTCN', method = "p", col_scheme = cs) +
-    ggplot2::theme_light() +
-    ggplot2::theme(#axis.ticks.y = ggplot2::element_line(size = 0),
-                   panel.grid.major = ggplot2::element_blank(),
-                   panel.grid.minor = ggplot2::element_blank()) +
-    ggplot2::ylab("probability")
+  freqdf <- as.data.frame(t(freqs))
+  freqdf <- freqdf/length(BC_dat)
+  freqdf$pos = as.numeric(as.character(rownames(freqdf)))
+
+  lmf <- reshape2::melt(freqdf, id.var = "pos")
+  colrs <- colrs[as.numeric(lmf$variable)]
+
+  ggplot2::ggplot(data = lmf, ggplot2::aes_string(x = "pos", y = "value", fill = "variable")) +
+    ggplot2::geom_bar(stat = "identity", alpha = 0.75, color = "white") +
+    ggplot2::scale_fill_manual(values = colrs) +
+    ggplot2::theme_bw() +
+    ggplot2::xlab("position") + ggplot2::ylab("percent") +
+    ggplot2::theme(legend.title = ggplot2::element_blank())
+
 }
+
+# plotSeqLogo <- function(BC_dat, colrs = NULL) {
+#
+#   if (sum(methods::is(BC_dat) == "BCdat") == 1) {
+#     BC_dat <- as.character(methods::slot(BC_dat, "reads")$barcode)
+#   }
+#   if (length(BC_dat) == 0) {
+#     return(ggplot2::ggplot())
+#   }
+#
+#   if (length(colrs) != 5) {
+#     if (!is.null(colrs)) {
+#       warning(" # 5 colors needed (A, T, C, G, N)")
+#     }
+#     colrs <- c(RColorBrewer::brewer.pal(5, "Set3")[-2], "black")
+#   }
+#
+#   cs <- .make_col_scheme(chars = c('A', 'T', 'C', 'G', 'N'), cols = colrs)
+#
+#   ggplot2::ggplot() +
+#     .geom_logo(data = BC_dat, namespace = 'AGTCN', method = "p", col_scheme = cs) +
+#     ggplot2::theme_light() +
+#     ggplot2::theme(#axis.ticks.y = ggplot2::element_line(size = 0),
+#                    panel.grid.major = ggplot2::element_blank(),
+#                    panel.grid.minor = ggplot2::element_blank()) +
+#     ggplot2::ylab("probability")
+# }
+

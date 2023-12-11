@@ -24,6 +24,8 @@ a ggtree object.
 Generates a tree plot based on a herachical clustering of the complete distance matrix.
 }
 \examples{
+\dontrun{
 data(BC_dat)
 plotClusterGgTree(BC_dat, tree_est = "UPGMA", type = "circular")
+}
 }

@@ -1,4 +1,4 @@
-af8d533bac7bb26f87d7fd6728c3db6c *DESCRIPTION
+ab9e69de6711463b2751d4c4dff0544c *DESCRIPTION
 a722a3e109e61d1d654e76f16f22084f *NAMESPACE
 8217005f76eaf536c9eda2dbcfbb0480 *R/BCdata-class-methods.R
 f1514ae929f54c0202dc9d32cf94c547 *R/BCdata-class.R
@@ -6,17 +6,17 @@ f1514ae929f54c0202dc9d32cf94c547 *R/BCdata-class.R
 5b1eb75575524327e5aa98b8ed689107 *R/data.R
 edf79764edb8733a55d88c883bb68563 *R/error_correction_function.R
 5f48c1ef509429267acef80cc4f69885 *R/helper_functions.R
-bf4cec47030556324fb5e34f294cb115 *R/plot_functions.R
+e3b6563485a308e50cafe6f69d34c8da *R/plot_functions.R
 92c15f633e42cd915daab57850aab701 *R/raw_data_processing.R
-d51f05b964cd98fe22f9182c789afb48 *build/vignette.rds
+a0fbc4c1f7bfe0b3823b5981e086bc4c *build/vignette.rds
 f793694d8e46762b7a13cb840d0f7e20 *data/BC_dat.RData
 888687064fd5d4bbc26c10430753dfa1 *data/BC_dat_EC.RData
-9bb851c53e64a0dd698d39496979409e *inst/doc/genBaRcode_GUI_Vignette.R
+6f66fd0f8e33a34e86f3fc322c946ceb *inst/doc/genBaRcode_GUI_Vignette.R
 753a72002e4a26facfd030a12bff1696 *inst/doc/genBaRcode_GUI_Vignette.Rmd
-6674e22e5a1a0c7cd8e2bdec33438718 *inst/doc/genBaRcode_GUI_Vignette.pdf
+05b71411c5aeb5f4e8e021bf60fec6e7 *inst/doc/genBaRcode_GUI_Vignette.pdf
 131014b65712672dbadb27ad509fa8fb *inst/doc/genBaRcode_Vignette.R
 aa3f700480b328b767532b9d8cd81253 *inst/doc/genBaRcode_Vignette.Rmd
-65b185a289a5450e337e66a5c500692c *inst/doc/genBaRcode_Vignette.pdf
+69fb4c9f15d0053949673f6b7438ca0a *inst/doc/genBaRcode_Vignette.pdf
 d38eab66cc7edde77443acf170a87995 *inst/extdata/knownBCs.txt
 76e5b21df3192de7ca70982862a677cd *inst/extdata/test_BCs.csv
 ca54a03abd7f45940d08680b14e3760f *inst/extdata/test_data.fastq.gz
@@ -55,7 +55,7 @@ da4e79aa77095c1a04834b4e4a7dcb77 *man/getResultsDir.Rd
 e94a1ff26f194e2ac43fc74beab58f5e *man/ggplotDistanceGraph.Rd
 44e261509fb6664e765708cc380ac175 *man/ggplotDistanceGraph_EC.Rd
 ad446cc01df978dbade039009faf3c48 *man/hybridsIdentification.Rd
-16711673c854dda0386b7ab2b69f1f43 *man/plotClusterGgTree.Rd
+a70d66c282247e49bdba60bd6428c2c4 *man/plotClusterGgTree.Rd
 3cc926d48e90ae55ddd7b89956a3365f *man/plotClusterTree.Rd
 76c06b56c4b4382c3e2f65b18ad8eb3b *man/plotDistanceIgraph.Rd
 c4d915d54f9a8b1dd1f200adbaeaf69a *man/plotDistanceVisNetwork.Rd
